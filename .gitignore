@@ -3,5 +3,9 @@ dist/
 *.log
 .env
 .DS_Store
-tempInvoice.md
 demo-spinner.mjs
+.env
+*.pdf
+*.txt
+tmp/*
+temp-invoice.md
