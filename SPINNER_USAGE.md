@@ -75,7 +75,7 @@ spinner.succeed();
 
 ### Sailor Moon Animation
 
-The Sailor Moon themed animation displays moon phases with sparkles for a magical effect.
+The Sailor Moon themed animation displays moon phases with Unicode stars for a magical effect. Uses standard Unicode characters for better terminal compatibility.
 
 ```javascript
 const spinner = createSpinner({
@@ -202,7 +202,7 @@ The spinner automatically detects the environment and adjusts behavior:
 - **TTY Detection**: All cursor operations are wrapped in `process.stdout.isTTY` checks
 - **Unicode Characters**: 
   - Dots animation: ◐◓◑◒ (circular rotation)
-  - Sailor Moon animation: 🌙✨💫⭐🌟💖 (moon with sparkles)
+  - Sailor Moon animation: ◐◓◑◒ with ✦✧★ (moon phases with Unicode stars)
   - Progress bar: █ (filled) and ░ (empty)
   - Status symbols: ✔ (success) and ✖ (error)
 

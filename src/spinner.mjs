@@ -39,8 +39,9 @@ export function createSpinner(options) {
   // Dots animation frames (circular rotation)
   const dotsFrames = ['◐', '◓', '◑', '◒'];
 
-  // Sailor Moon themed animation frames (moon phases with sparkles)
-  const sailorMoonFrames = ['🌙✨', '🌙💫', '🌙⭐', '🌙🌟', '🌙✨', '🌙💖'];
+  // Sailor Moon themed animation frames (moon phases with Unicode stars)
+  // Uses standard Unicode characters for better terminal compatibility
+  const sailorMoonFrames = ['◐ ✦', '◓ ✧', '◑ ★', '◒ ✦', '◐ ✧', '◓ ★'];
 
   /**
    * Clears the current line in the console
