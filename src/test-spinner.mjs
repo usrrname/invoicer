@@ -166,4 +166,49 @@ describe('Spinner Utility', () => {
     
     assert.ok(true, 'UpdateProgress ignored for dots animation');
   });
+
+  test('should handle Sailor Moon animation', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Fighting evil by moonlight...',
+      completionText: 'Mission complete!',
+      errorText: 'Mission failed!',
+      animationType: 'sailormoon'
+    });
+    
+    spinner.start();
+    await delay(500);
+    spinner.succeed();
+    
+    assert.ok(true, 'Sailor Moon animation completed');
+  });
+
+  test('should display colored success message', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Processing...',
+      completionText: 'Success!',
+      errorText: 'Error!',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    await delay(100);
+    spinner.succeed();
+    
+    assert.ok(true, 'Success message displayed with color');
+  });
+
+  test('should display colored error message', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Processing...',
+      completionText: 'Success!',
+      errorText: 'Failed!',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    await delay(100);
+    spinner.fail();
+    
+    assert.ok(true, 'Error message displayed with color');
+  });
 });

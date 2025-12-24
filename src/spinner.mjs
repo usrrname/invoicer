@@ -8,7 +8,7 @@
  * @property {string} loadingText - The text to display with the spinner
  * @property {string} completionText - The text to display when the spinner completes successfully
  * @property {string} errorText - The text to display when the spinner encounters an error
- * @property {'dots' | 'progress'} [animationType='dots'] - The type of animation to use
+ * @property {'dots' | 'progress' | 'sailormoon'} [animationType='dots'] - The type of animation to use
  */
 
 /**
@@ -29,8 +29,18 @@ export function createSpinner(options) {
   let isRunning = false;
   let progress = 0;
 
-  // Dots animation frames
-  const dotsFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  // ANSI color codes
+  const colors = {
+    green: '\x1B[32m',
+    orange: '\x1B[38;5;214m',
+    reset: '\x1B[0m'
+  };
+
+  // Dots animation frames (circular rotation)
+  const dotsFrames = ['◐', '◓', '◑', '◒'];
+
+  // Sailor Moon themed animation frames (moon phases with sparkles)
+  const sailorMoonFrames = ['🌙✨', '🌙💫', '🌙⭐', '🌙🌟', '🌙✨', '🌙💖'];
 
   /**
    * Clears the current line in the console
@@ -48,6 +58,16 @@ export function createSpinner(options) {
   function renderDots() {
     clearLine();
     const spinner = dotsFrames[frame % dotsFrames.length];
+    process.stdout.write(`${spinner} ${loadingText}`);
+    frame++;
+  }
+
+  /**
+   * Renders the Sailor Moon themed animation
+   */
+  function renderSailorMoon() {
+    clearLine();
+    const spinner = sailorMoonFrames[frame % sailorMoonFrames.length];
     process.stdout.write(`${spinner} ${loadingText}`);
     frame++;
   }
@@ -103,6 +123,8 @@ export function createSpinner(options) {
       intervalId = setInterval(() => {
         renderProgress();
       }, 100);
+    } else if (animationType === 'sailormoon') {
+      intervalId = setInterval(renderSailorMoon, 150);
     }
   }
 
@@ -134,7 +156,7 @@ export function createSpinner(options) {
    */
   function succeed() {
     stop();
-    console.log(`✔ ${completionText}`);
+    console.log(`${colors.green}✔ ${completionText}${colors.reset}`);
   }
 
   /**
@@ -142,7 +164,7 @@ export function createSpinner(options) {
    */
   function fail() {
     stop();
-    console.log(`✖ ${errorText}`);
+    console.log(`${colors.orange}✖ ${errorText}${colors.reset}`);
   }
 
   return {

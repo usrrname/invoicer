@@ -35,7 +35,7 @@ try {
 
 ### Dots Animation
 
-The dots animation displays a rotating series of spinner characters followed by the loading text.
+The dots animation displays circular rotating characters followed by the loading text.
 
 ```javascript
 const spinner = createSpinner({
@@ -73,6 +73,23 @@ for (let i = 0; i <= 100; i += 10) {
 spinner.succeed();
 ```
 
+### Sailor Moon Animation
+
+The Sailor Moon themed animation displays moon phases with sparkles for a magical effect.
+
+```javascript
+const spinner = createSpinner({
+  loadingText: 'Fighting evil by moonlight...',
+  completionText: 'Moon Princess Power! Mission accomplished!',
+  errorText: 'The enemy was too strong...',
+  animationType: 'sailormoon'
+});
+
+spinner.start();
+// ... perform magical work ...
+spinner.succeed();
+```
+
 ## API
 
 ### `createSpinner(options)`
@@ -81,9 +98,9 @@ Creates a new spinner instance.
 
 **Options:**
 - `loadingText` (string): Text to display while loading
-- `completionText` (string): Text to display on success
-- `errorText` (string): Text to display on error
-- `animationType` ('dots' | 'progress'): Type of animation (default: 'dots')
+- `completionText` (string): Text to display on success (shown in green)
+- `errorText` (string): Text to display on error (shown in orange)
+- `animationType` ('dots' | 'progress' | 'sailormoon'): Type of animation (default: 'dots')
 
 **Returns:** Spinner instance with the following methods:
 
@@ -97,11 +114,11 @@ Stops the spinner and clears the interval. The line is cleared but no completion
 
 ### `spinner.succeed()`
 
-Stops the spinner and displays the success message with a checkmark.
+Stops the spinner and displays the success message with a green checkmark.
 
 ### `spinner.fail()`
 
-Stops the spinner and displays the error message with an X mark.
+Stops the spinner and displays the error message with an orange X mark.
 
 ### `spinner.updateProgress(value)`
 
@@ -179,10 +196,13 @@ The spinner automatically detects the environment and adjusts behavior:
 
 ### Technical Details
 
-- **ANSI Escape Codes**: Uses standard sequences (`\x1B[?25l` for hide cursor, `\x1B[?25h` for show cursor)
+- **ANSI Escape Codes**: Uses standard sequences for cursor control and colors
+  - Cursor: `\x1B[?25l` (hide) and `\x1B[?25h` (show)
+  - Colors: Green (`\x1B[32m`) for success, Orange (`\x1B[38;5;214m`) for errors
 - **TTY Detection**: All cursor operations are wrapped in `process.stdout.isTTY` checks
 - **Unicode Characters**: 
-  - Spinner frames: ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ (Braille patterns)
+  - Dots animation: ◐◓◑◒ (circular rotation)
+  - Sailor Moon animation: 🌙✨💫⭐🌟💖 (moon with sparkles)
   - Progress bar: █ (filled) and ░ (empty)
   - Status symbols: ✔ (success) and ✖ (error)
 
@@ -191,7 +211,7 @@ The spinner automatically detects the environment and adjusts behavior:
 In environments without TTY support:
 - Spinner animations are not displayed
 - Progress updates don't show
-- Success/error messages still print normally via `console.log`
+- Success/error messages still print normally via `console.log` (with colors when supported)
 
 ## Testing
 
