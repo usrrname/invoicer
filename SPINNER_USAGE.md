@@ -153,6 +153,46 @@ try {
 }
 ```
 
+## Compatibility
+
+The spinner utility is designed to work across different shells and environments:
+
+### Terminal/Shell Support
+
+**Full Support (ANSI + Unicode):**
+- Unix/Linux shells (bash, zsh, sh, fish)
+- macOS Terminal.app and iTerm2
+- Windows Terminal
+- Windows PowerShell
+- WSL (Windows Subsystem for Linux)
+
+**Partial Support (Unicode may render differently):**
+- Windows cmd.exe (legacy) - Unicode characters display but may not render perfectly
+
+### Environment Detection
+
+The spinner automatically detects the environment and adjusts behavior:
+
+- **Interactive TTY**: Full animation with cursor control
+- **Non-TTY (pipes, redirects, CI/CD)**: Gracefully degrades - animations are skipped, no errors thrown
+- **Test Environments**: Compatible with `node:test` and other test runners
+
+### Technical Details
+
+- **ANSI Escape Codes**: Uses standard sequences (`\x1B[?25l` for hide cursor, `\x1B[?25h` for show cursor)
+- **TTY Detection**: All cursor operations are wrapped in `process.stdout.isTTY` checks
+- **Unicode Characters**: 
+  - Spinner frames: ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ (Braille patterns)
+  - Progress bar: █ (filled) and ░ (empty)
+  - Status symbols: ✔ (success) and ✖ (error)
+
+### Fallback Behavior
+
+In environments without TTY support:
+- Spinner animations are not displayed
+- Progress updates don't show
+- Success/error messages still print normally via `console.log`
+
 ## Testing
 
 Run the test suite with Node.js built-in test runner:
@@ -167,3 +207,4 @@ The tests use `node:test` and include coverage for:
 - Success and error completion states
 - Progress bar updates and clamping
 - Edge cases (multiple start/stop calls)
+- TTY and non-TTY environment handling
