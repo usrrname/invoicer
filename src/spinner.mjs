@@ -103,7 +103,7 @@ export function createSpinner(options) {
   }
 
   /**
-   * Stops the spinner and clears the timeout
+   * Stops the spinner and clears the interval
    */
   function stop() {
     if (!isRunning) {
