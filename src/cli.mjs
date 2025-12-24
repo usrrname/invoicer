@@ -2,6 +2,11 @@ import { argv } from "process";
 import { parseMarkdownToInvoice } from "./markdownParser.mjs";
 import { generatePDF } from "./pdfGenerator.mjs";
 
+/**
+ * CLI for the invoicer application.
+ * @param {string[]} argv - The command line arguments.
+ * @returns {void}
+ */
 if (argv.length < 4) {
   console.error("Usage: node cli.mjs <input-markdown-file> <output-pdf-file>");
   process.exit(1);

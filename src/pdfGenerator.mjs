@@ -3,7 +3,7 @@ import markdownpdf from 'markdown-pdf';
 
 /**
  * Generates a PDF from an Invoice object.
- * @param invoice invoice details.
+ * @param {Invoice} invoice - The invoice details.
  * @param outputFilePath path to save the generated PDF.
  */
 export function generatePDF(invoice, outputFilePath) {
