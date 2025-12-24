@@ -1,12 +1,9 @@
-import dotenv from "dotenv";
 import { argv } from "process";
-import { parseMarkdownToInvoice } from "./markdownParser.js";
-import { generatePDF } from "./pdfGenerator";
-
-dotenv.config();
+import { parseMarkdownToInvoice } from "./markdownParser.mjs";
+import { generatePDF } from "./pdfGenerator.mjs";
 
 if (argv.length < 4) {
-  console.error("Usage: node cli.js <input-markdown-file> <output-pdf-file>");
+  console.error("Usage: node cli.mjs <input-markdown-file> <output-pdf-file>");
   process.exit(1);
 }
 

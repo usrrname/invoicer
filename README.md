@@ -2,27 +2,6 @@
 
 A TypeScript-based CLI that converts markdown invoice files into PDF documents.
 
-## Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd invoicer
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Build the project:
-
-```bash
-npx tsc
-```
-
 ## Usage
 
 Run the CLI tool with an input markdown file and output PDF path:
@@ -71,9 +50,9 @@ Total: 2500.00
 ```
 invoicer/
 ├── src/
-│   ├── cli.ts              # Command-line interface
-│   ├── markdownParser.ts   # Markdown to Invoice parser
-│   └── pdfGenerator.ts    # PDF generation from Invoice
+│   ├── cli.mjs              # Command-line interface
+│   ├── markdownParser.mjs   # Markdown to Invoice parser
+│   └── pdfGenerator.mjs    # PDF generation from Invoice
 ├── dist/                   # Compiled JavaScript output
 ├── package.json
 ├── tsconfig.json

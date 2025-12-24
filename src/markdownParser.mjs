@@ -1,19 +1,34 @@
 import * as fs from 'fs';
 
-export interface Invoice {
-  recipientName: string;
-  recipientAddress: string;
-  telephoneNumber: string;
-  invoicerName: string;
-  invoicerEmail: string;
-  invoicerAddress: string;
-  lineItems: LineItem[];
-  expenses: number;
-  total: number;
+/**
+ * @type {Invoice}
+ * @property {string} recipientName
+ * @property {string} recipientAddress
+ * @property {string} telephoneNumber
+ * @property {string} invoicerName
+ * @property {string} invoicerEmail
+ * @property {string} invoicerAddress
+ * @property {Array<{description: string, date: string, hours: number, amount: number}>} lineItems
+ * @property {number} expenses
+ * @property {number} total
+ */
+export const Invoice = {
+  recipientName: '',
+  recipientAddress: '',
+  telephoneNumber: '',
+  invoicerName: '',
+  invoicerEmail: '',
+  invoicerAddress: '',
+  lineItems: [],
+  expenses: 0,
+  total: 0,
 }
-export type LineItem = { description: string; date: string; hours: number; amount: number };
 
-export function parseMarkdownToInvoice(filePath: string): Invoice {
+/**
+ * @param {string} filePath
+ * @returns {Invoice}
+ */
+export function parseMarkdownToInvoice(filePath) {
   const markdownContent = fs.readFileSync(filePath, 'utf-8');
 
   const lines = markdownContent.split('\n');
@@ -22,21 +37,11 @@ export function parseMarkdownToInvoice(filePath: string): Invoice {
     throw new Error('File is empty');
   }
 
-  
-  const invoice: Invoice = {
-    recipientName: '',
-    recipientAddress: '',
-    telephoneNumber: '',
-    invoicerName: '',
-    invoicerEmail: '',
-    invoicerAddress: '',
-    lineItems: [],
-    expenses: 0,
-    total: 0,
-  };
 
-  lines.forEach((line: string) => {
-    const propertyMapping: { [key: string]: keyof Invoice } = {
+  const invoice = Object.assign({}, Invoice);
+  
+  lines.forEach((line) => {
+    const propertyMapping = {
       'Recipient Name:': 'recipientName',
       'Recipient Address:': 'recipientAddress',
       'Telephone Number:': 'telephoneNumber',

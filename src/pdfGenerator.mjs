@@ -1,13 +1,12 @@
 import * as fs from 'fs';
 import markdownpdf from 'markdown-pdf';
-import type { Invoice } from './markdownParser';
 
 /**
  * Generates a PDF from an Invoice object.
- * @param invoice The invoice details.
- * @param outputFilePath The path to save the generated PDF.
+ * @param invoice invoice details.
+ * @param outputFilePath path to save the generated PDF.
  */
-export function generatePDF(invoice: Invoice, outputFilePath: string): void {
+export function generatePDF(invoice, outputFilePath) {
   const markdownContent = `# Invoice
 
 **Recipient Name:** ${invoice.recipientName}
