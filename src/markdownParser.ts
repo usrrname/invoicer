@@ -11,7 +11,7 @@ export interface Invoice {
   expenses: number;
   total: number;
 }
-export type LineItem = { description: string; amount: number };
+export type LineItem = { description: string; date: string; hours: number; amount: number };
 
 export function parseMarkdownToInvoice(filePath: string): Invoice {
   const markdownContent = fs.readFileSync(filePath, 'utf-8');
@@ -22,6 +22,7 @@ export function parseMarkdownToInvoice(filePath: string): Invoice {
     throw new Error('File is empty');
   }
 
+  
   const invoice: Invoice = {
     recipientName: '',
     recipientAddress: '',
@@ -35,25 +36,38 @@ export function parseMarkdownToInvoice(filePath: string): Invoice {
   };
 
   lines.forEach((line: string) => {
-    if (line.startsWith('Recipient Name:')) {
-      invoice.recipientName = line.replace('Recipient Name:', '').trim();
-    } else if (line.startsWith('Recipient Address:')) {
-      invoice.recipientAddress = line.replace('Recipient Address:', '').trim();
-    } else if (line.startsWith('Telephone Number:')) {
-      invoice.telephoneNumber = line.replace('Telephone Number:', '').trim();
-    } else if (line.startsWith('Invoicer Name:')) {
-      invoice.invoicerName = line.replace('Invoicer Name:', '').trim();
-    } else if (line.startsWith('Invoicer Email:')) {
-      invoice.invoicerEmail = line.replace('Invoicer Email:', '').trim();
-    } else if (line.startsWith('Invoicer Address:')) {
-      invoice.invoicerAddress = line.replace('Invoicer Address:', '').trim();
-    } else if (line.startsWith('Line Item:')) {
+    const propertyMapping: { [key: string]: keyof Invoice } = {
+      'Recipient Name:': 'recipientName',
+      'Recipient Address:': 'recipientAddress',
+      'Telephone Number:': 'telephoneNumber',
+      'Invoicer Name:': 'invoicerName',
+      'Invoicer Email:': 'invoicerEmail',
+      'Invoicer Address:': 'invoicerAddress',
+    };
 
-      const [description, amount] = line.replace('Line Item:', '').split(',') ?? [];
-      if (description && amount) {
+    for (const prefix in propertyMapping) {
+      if (line.startsWith(prefix)) {
+        // @ts-expect-error - types are known safe by control
+        invoice[propertyMapping[prefix]] = line.replace(prefix, '').trim();
+        return;
+      }
+    }
+
+    if (line.startsWith('Line Item:')) {
+      const parts = line.replace('Line Item:', '').split(',').map(p => p.trim());
+      const [description, date, hours, amount] = parts;
+      if (
+        parts.length >= 4 &&
+        description?.trim() !== '' &&
+        date?.trim() !== '' &&
+        hours?.trim() !== '' &&
+        amount?.trim() !== ''
+      ) {
         invoice.lineItems.push({
-          description: description.trim(),
-          amount: parseFloat(amount.trim()),
+          description: description?.trim() ?? '',
+          date: date?.trim() ?? '',
+          hours: parseFloat(hours?.trim() ?? '0'),
+          amount: parseFloat(amount?.trim() ?? '0'),
         });
       }
     } else if (line.startsWith('Expenses:')) {
@@ -62,6 +76,10 @@ export function parseMarkdownToInvoice(filePath: string): Invoice {
       invoice.total = parseFloat(line.replace('Total:', '').trim());
     }
   });
+
+  if (invoice.lineItems.length === 0) {
+    throw new Error('No line items found in the invoice');
+  }
 
   return invoice;
 }

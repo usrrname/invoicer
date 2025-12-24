@@ -1,13 +1,6 @@
 # Invoicer
 
-A TypeScript-based command-line tool that converts markdown invoice files into PDF documents.
-
-## Features
-
-- Parse invoice data from markdown files
-- Generate professional PDF invoices
-- Simple command-line interface
-- Type-safe implementation with TypeScript
+A TypeScript-based CLI that converts markdown invoice files into PDF documents.
 
 ## Installation
 
@@ -55,8 +48,8 @@ Telephone Number: (555) 123-4567
 Invoicer Name: Jane Smith
 Invoicer Email: jane@example.com
 Invoicer Address: 456 Business Ave, City, State 67890
-Line Item: Web Development, 1500.00
-Line Item: Design Services, 800.00
+Line Item: Web Development, 2024-01-15, 8, 1500.00
+Line Item: Design Services, 2024-01-16, 4, 800.00
 Expenses: 200.00
 Total: 2500.00
 ```
@@ -69,7 +62,7 @@ Total: 2500.00
 - `Invoicer Name`: Name of the person/company issuing the invoice
 - `Invoicer Email`: Email address of the invoicer
 - `Invoicer Address`: Address of the invoicer
-- `Line Item: <description>, <amount>`: Individual line items (can be multiple)
+- `Line Item: <description>, <date>, <hours>, <amount>`: Individual line items (can be multiple). Format: description, date (YYYY-MM-DD), number of hours, amount
 - `Expenses`: Additional expenses amount
 - `Total`: Total invoice amount
 

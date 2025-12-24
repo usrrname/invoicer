@@ -20,7 +20,7 @@ export function generatePDF(invoice: Invoice, outputFilePath: string): void {
 
 ## Line Items:
 ${invoice.lineItems
-      .map((item) => `- ${item.description}: $${item.amount}`)
+      .map((item) => `- ${item.description} (Date: ${item.date}, Hours: ${item.hours}): $${item.amount}`)
       .join('\n')}
 
 **Expenses:** $${invoice.expenses}
