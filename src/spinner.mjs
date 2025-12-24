@@ -36,8 +36,10 @@ export function createSpinner(options) {
    * Clears the current line in the console
    */
   function clearLine() {
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
+    if (process.stdout.isTTY && typeof process.stdout.clearLine === 'function') {
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+    }
   }
 
   /**
@@ -87,8 +89,10 @@ export function createSpinner(options) {
     frame = 0;
     progress = 0;
 
-    // Hide cursor
-    process.stdout.write('\x1B[?25l');
+    // Hide cursor (only if TTY is available)
+    if (process.stdout.isTTY && typeof process.stdout.write === 'function') {
+      process.stdout.write('\x1B[?25l');
+    }
 
     if (animationType === 'dots') {
       intervalId = setInterval(renderDots, 80);
@@ -119,8 +123,10 @@ export function createSpinner(options) {
 
     clearLine();
     
-    // Show cursor
-    process.stdout.write('\x1B[?25h');
+    // Show cursor (only if TTY is available)
+    if (process.stdout.isTTY && typeof process.stdout.write === 'function') {
+      process.stdout.write('\x1B[?25h');
+    }
   }
 
   /**

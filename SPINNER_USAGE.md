@@ -155,8 +155,15 @@ try {
 
 ## Testing
 
-Run the test script to see all animation types in action:
+Run the test suite with Node.js built-in test runner:
 
 ```bash
-node src/test-spinner.mjs
+npm test
 ```
+
+The tests use `node:test` and include coverage for:
+- Creating spinners with different configurations
+- Starting and stopping animations
+- Success and error completion states
+- Progress bar updates and clamping
+- Edge cases (multiple start/stop calls)

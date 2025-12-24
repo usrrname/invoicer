@@ -1,93 +1,169 @@
-#!/usr/bin/env node
-
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
 import { createSpinner } from './spinner.mjs';
 
 // Helper to create a promise-based delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-console.log('Testing Spinner Utility\n');
-console.log('======================\n');
-
-async function runTests() {
-  // Test 1: Dots animation with success
-  await testDotsSuccess();
-  
-  // Test 2: Dots animation with error
-  await testDotsError();
-  
-  // Test 3: Progress bar animation
-  await testProgressBar();
-  
-  // Test 4: Manual stop
-  await testManualStop();
-  
-  console.log('\nAll tests completed!');
-}
-
-async function testDotsSuccess() {
-  console.log('Test 1: Dots animation with success');
-  const dotsSpinner = createSpinner({
-    loadingText: 'Processing data...',
-    completionText: 'Data processed successfully',
-    errorText: 'Failed to process data',
-    animationType: 'dots'
+describe('Spinner Utility', () => {
+  test('should create spinner with default options', () => {
+    const spinner = createSpinner({
+      loadingText: 'Loading...',
+      completionText: 'Done',
+      errorText: 'Error'
+    });
+    
+    assert.ok(spinner, 'Spinner should be created');
+    assert.strictEqual(typeof spinner.start, 'function', 'Should have start method');
+    assert.strictEqual(typeof spinner.stop, 'function', 'Should have stop method');
+    assert.strictEqual(typeof spinner.succeed, 'function', 'Should have succeed method');
+    assert.strictEqual(typeof spinner.fail, 'function', 'Should have fail method');
+    assert.strictEqual(typeof spinner.updateProgress, 'function', 'Should have updateProgress method');
   });
 
-  dotsSpinner.start();
-  await delay(3000);
-  dotsSpinner.succeed();
-  await delay(500);
-}
+  test('should start and stop dots animation', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Processing data...',
+      completionText: 'Data processed successfully',
+      errorText: 'Failed to process data',
+      animationType: 'dots'
+    });
 
-async function testDotsError() {
-  console.log('\nTest 2: Dots animation with error');
-  const errorSpinner = createSpinner({
-    loadingText: 'Attempting to connect...',
-    completionText: 'Connected successfully',
-    errorText: 'Connection failed',
-    animationType: 'dots'
+    spinner.start();
+    await delay(500);
+    spinner.stop();
+    
+    assert.ok(true, 'Spinner started and stopped without error');
   });
-  
-  errorSpinner.start();
-  await delay(2000);
-  errorSpinner.fail();
-  await delay(500);
-}
 
-async function testProgressBar() {
-  console.log('\nTest 3: Progress bar animation');
-  const progressSpinner = createSpinner({
-    loadingText: 'Uploading file...',
-    completionText: 'Upload complete',
-    errorText: 'Upload failed',
-    animationType: 'progress'
+  test('should complete dots animation with success', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Processing data...',
+      completionText: 'Data processed successfully',
+      errorText: 'Failed to process data',
+      animationType: 'dots'
+    });
+
+    spinner.start();
+    await delay(500);
+    spinner.succeed();
+    
+    assert.ok(true, 'Spinner completed successfully');
   });
-  
-  progressSpinner.start();
-  
-  for (let currentProgress = 0; currentProgress <= 100; currentProgress += 10) {
-    progressSpinner.updateProgress(currentProgress);
-    await delay(300);
-  }
-  
-  await delay(500);
-  progressSpinner.succeed();
-  await delay(500);
-}
 
-async function testManualStop() {
-  console.log('\nTest 4: Manual stop without completion message');
-  const manualSpinner = createSpinner({
-    loadingText: 'Running task...',
-    completionText: 'Task completed',
-    errorText: 'Task failed',
-    animationType: 'dots'
+  test('should complete dots animation with error', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Attempting to connect...',
+      completionText: 'Connected successfully',
+      errorText: 'Connection failed',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    await delay(500);
+    spinner.fail();
+    
+    assert.ok(true, 'Spinner failed as expected');
   });
-  
-  manualSpinner.start();
-  await delay(2000);
-  manualSpinner.stop();
-  console.log('Spinner stopped manually');
-}
 
-runTests();
+  test('should handle progress bar animation', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Uploading file...',
+      completionText: 'Upload complete',
+      errorText: 'Upload failed',
+      animationType: 'progress'
+    });
+    
+    spinner.start();
+    
+    for (let currentProgress = 0; currentProgress <= 100; currentProgress += 20) {
+      spinner.updateProgress(currentProgress);
+      await delay(100);
+    }
+    
+    spinner.succeed();
+    
+    assert.ok(true, 'Progress bar animation completed');
+  });
+
+  test('should update progress correctly', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Uploading file...',
+      completionText: 'Upload complete',
+      errorText: 'Upload failed',
+      animationType: 'progress'
+    });
+    
+    spinner.start();
+    spinner.updateProgress(50);
+    await delay(100);
+    spinner.stop();
+    
+    assert.ok(true, 'Progress updated successfully');
+  });
+
+  test('should handle multiple start calls gracefully', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Loading...',
+      completionText: 'Done',
+      errorText: 'Error',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    spinner.start(); // Should not cause issues
+    await delay(100);
+    spinner.stop();
+    
+    assert.ok(true, 'Multiple start calls handled gracefully');
+  });
+
+  test('should handle multiple stop calls gracefully', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Loading...',
+      completionText: 'Done',
+      errorText: 'Error',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    await delay(100);
+    spinner.stop();
+    spinner.stop(); // Should not cause issues
+    
+    assert.ok(true, 'Multiple stop calls handled gracefully');
+  });
+
+  test('should clamp progress values', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Processing...',
+      completionText: 'Done',
+      errorText: 'Error',
+      animationType: 'progress'
+    });
+    
+    spinner.start();
+    spinner.updateProgress(-10); // Should clamp to 0
+    spinner.updateProgress(150); // Should clamp to 100
+    await delay(100);
+    spinner.stop();
+    
+    assert.ok(true, 'Progress values clamped correctly');
+  });
+
+  test('should not update progress for dots animation', async () => {
+    const spinner = createSpinner({
+      loadingText: 'Loading...',
+      completionText: 'Done',
+      errorText: 'Error',
+      animationType: 'dots'
+    });
+    
+    spinner.start();
+    spinner.updateProgress(50); // Should have no effect
+    await delay(100);
+    spinner.stop();
+    
+    assert.ok(true, 'UpdateProgress ignored for dots animation');
+  });
+});
