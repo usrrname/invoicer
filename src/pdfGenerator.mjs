@@ -7,6 +7,15 @@ import markdownpdf from 'markdown-pdf';
  * @param outputFilePath path to save the generated PDF.
  */
 export function generatePDF(invoice, outputFilePath) {
+  // Calculate total from line items and expenses
+  const lineItemsTotal = invoice.lineItems.reduce((sum, item) => sum + item.amount, 0);
+  const expensesTotal = Array.isArray(invoice.expenses) 
+    ? invoice.expenses.reduce((sum, expense) => sum + expense.cost, 0)
+    : (invoice.expenses || 0);
+  
+  const calculatedTotal = lineItemsTotal + expensesTotal;
+  const total = invoice.total > 0 ? invoice.total : calculatedTotal;
+
   const markdownContent = `# Invoice
 
 **Recipient Name:** ${invoice.recipientName}
@@ -17,13 +26,24 @@ export function generatePDF(invoice, outputFilePath) {
 **Invoicer Email:** ${invoice.invoicerEmail}
 **Invoicer Address:** ${invoice.invoicerAddress}
 
-## Line Items:
-${invoice.lineItems
-      .map((item) => `- ${item.description} (Date: ${item.date}, Hours: ${item.hours}): $${item.amount}`)
-      .join('\n')}
+### Line Items:
 
-**Expenses:** $${invoice.expenses}
-**Total:** $${invoice.total}
+| Description | Date | Hours/Name | Amount |
+|-------------|------|-----------|--------|
+${invoice.lineItems
+      .map((item) => `| ${item.description} | ${item.date} | ${item.hours} | $${item.amount} |`)
+    .join('\n')}
+
+### Expenses:
+
+| Description | Date | Name | Amount |
+|-------------|------|-------|--------|
+${Array.isArray(invoice.expenses) 
+    ? invoice.expenses
+        .map((expense) => `| ${expense.description} | ${expense.date} | ${expense.name} | $${expense.cost} |`)
+        .join('\n')
+    : '| | | | |'}
+| **Total** | | | **$${total}** |
 `;
 
   // Save the markdown content to a temporary file

@@ -9,7 +9,7 @@ import * as fs from 'fs';
  * @property {string} invoicerEmail
  * @property {string} invoicerAddress
  * @property {Array<{description: string, date: string, hours: number, amount: number}>} lineItems
- * @property {number} expenses
+ * @property {Array<{date: string, name: string, description: string, cost: number}>} expenses
  * @property {number} total
  */
 export const Invoice = {
@@ -20,7 +20,7 @@ export const Invoice = {
   invoicerEmail: '',
   invoicerAddress: '',
   lineItems: [],
-  expenses: 0,
+  expenses: [],
   total: 0,
 }
 
@@ -28,7 +28,7 @@ export const Invoice = {
  * @param {string} filePath
  * @returns {Invoice}
  */
-export function parseMarkdownToInvoice(filePath) {
+export function fromMarkdownToPdf(filePath) {
   const markdownContent = fs.readFileSync(filePath, 'utf-8');
 
   const lines = markdownContent.split('\n');
@@ -63,10 +63,10 @@ export function parseMarkdownToInvoice(filePath) {
       const [description, date, hours, amount] = parts;
       if (
         parts.length >= 4 &&
-        description?.trim() !== '' &&
-        date?.trim() !== '' &&
-        hours?.trim() !== '' &&
-        amount?.trim() !== ''
+        description?.trim() &&
+        date?.trim() &&
+        hours?.trim() &&
+        amount?.trim()
       ) {
         invoice.lineItems.push({
           description: description?.trim() ?? '',
@@ -75,15 +75,30 @@ export function parseMarkdownToInvoice(filePath) {
           amount: parseFloat(amount?.trim() ?? '0'),
         });
       }
-    } else if (line.startsWith('Expenses:')) {
-      invoice.expenses = parseFloat(line.replace('Expenses:', '').trim());
+    } else if (line.startsWith('Expense:')) {
+      const parts = line.replace('Expense:', '').split(',').map(p => p.trim());
+      const [date, name, description, cost] = parts;
+      if (
+        parts.length >= 4 &&
+        date?.trim() &&
+        name?.trim() &&
+        description?.trim() &&
+        cost?.trim()
+      ) {
+        invoice.expenses.push({
+          date: date?.trim() ?? '',
+          name: name?.trim() ?? '',
+          description: description?.trim() ?? '',
+          cost: parseFloat(cost?.trim() ?? '0'),
+        });
+      }
     } else if (line.startsWith('Total:')) {
       invoice.total = parseFloat(line.replace('Total:', '').trim());
     }
   });
 
-  if (invoice.lineItems.length === 0) {
-    throw new Error('No line items found in the invoice');
+  if (invoice.lineItems.length === 0 && invoice.expenses.length === 0) {
+    throw new Error('No line items or expenses found in the invoice');
   }
 
   return invoice;

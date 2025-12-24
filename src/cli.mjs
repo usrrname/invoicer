@@ -1,5 +1,5 @@
 import { argv } from "process";
-import { parseMarkdownToInvoice } from "./markdownParser.mjs";
+import { fromMarkdownToPdf } from "./markdownParser.mjs";
 import { generatePDF } from "./pdfGenerator.mjs";
 
 /**
@@ -21,7 +21,7 @@ if (!inputFilePath || !outputFilePath) {
 }
 
 try {
-  const invoice = parseMarkdownToInvoice(inputFilePath);
+  const invoice = fromMarkdownToPdf(inputFilePath);
   generatePDF(invoice, outputFilePath);
   console.log(`Invoice PDF generated at: ${outputFilePath}`);
 } catch (err) {
