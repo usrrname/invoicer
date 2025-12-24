@@ -1,5 +1,10 @@
 import * as fs from 'fs';
 import markdownpdf from 'markdown-pdf';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Generates a PDF from an Invoice object.
@@ -16,15 +21,11 @@ export function generatePDF(invoice, outputFilePath) {
   const calculatedTotal = lineItemsTotal + expensesTotal;
   const total = invoice.total > 0 ? invoice.total : calculatedTotal;
 
-  const markdownContent = `# Invoice
+  const markdownContent = `## Invoice \n
 
-**Recipient Name:** ${invoice.recipientName}
-**Recipient Address:** ${invoice.recipientAddress}
-**Telephone Number:** ${invoice.telephoneNumber}
-
-**Invoicer Name:** ${invoice.invoicerName}
-**Invoicer Email:** ${invoice.invoicerEmail}
-**Invoicer Address:** ${invoice.invoicerAddress}
+   **Bill To:** ${invoice.recipientName} ${invoice.recipientAddress} ${invoice.telephoneNumber}
+  
+    **From:** ${invoice.invoicerName} ${invoice.invoicerEmail} ${invoice.invoicerAddress}\n
 
 ### Line Items:
 
@@ -50,8 +51,19 @@ ${Array.isArray(invoice.expenses)
   const tempMarkdownPath = 'tempInvoice.md';
   fs.writeFileSync(tempMarkdownPath, markdownContent);
 
-  // Convert markdown to PDF
-  markdownpdf()
+  // Get path to CSS file
+  const cssPath = join(__dirname, 'invoice-styles.css');
+
+  // Convert markdown to PDF with styling
+  markdownpdf({
+    cssPath: cssPath,
+    paperFormat: 'A4',
+    paperOrientation: 'portrait',
+    paperBorder: '1cm',
+    renderDelay: 1000,
+    type: 'pdf',
+    quality: 100
+  })
     .from(tempMarkdownPath)
     .to(outputFilePath, () => {
       console.log(`PDF generated successfully at ${outputFilePath}`);
