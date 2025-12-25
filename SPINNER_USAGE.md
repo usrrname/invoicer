@@ -1,0 +1,230 @@
+# Spinner Utility Usage
+
+The spinner utility provides a simple way to add loading animations to your Node.js CLI applications.
+
+## Installation
+
+The spinner is included in the project at `src/spinner.mjs`.
+
+## Basic Usage
+
+```javascript
+import { createSpinner } from './spinner.mjs';
+
+// Create a spinner instance
+const spinner = createSpinner({
+  loadingText: 'Processing data...',
+  completionText: 'Data processed successfully',
+  errorText: 'Failed to process data',
+  animationType: 'dots' // or 'progress'
+});
+
+// Start the spinner
+spinner.start();
+
+// Perform your async operation
+try {
+  await someAsyncOperation();
+  spinner.succeed(); // Show success message
+} catch (error) {
+  spinner.fail(); // Show error message
+}
+```
+
+## Animation Types
+
+### Dots Animation
+
+The dots animation displays circular rotating characters followed by the loading text.
+
+```javascript
+const spinner = createSpinner({
+  loadingText: 'Loading...',
+  completionText: 'Done!',
+  errorText: 'Error!',
+  animationType: 'dots'
+});
+
+spinner.start();
+// ... perform work ...
+spinner.succeed();
+```
+
+### Progress Bar Animation
+
+The progress bar animation shows a visual progress bar with percentage.
+
+```javascript
+const spinner = createSpinner({
+  loadingText: 'Uploading file...',
+  completionText: 'Upload complete',
+  errorText: 'Upload failed',
+  animationType: 'progress'
+});
+
+spinner.start();
+
+// Update progress as work completes
+for (let i = 0; i <= 100; i += 10) {
+  await someWork();
+  spinner.updateProgress(i);
+}
+
+spinner.succeed();
+```
+
+### Sailor Moon Animation
+
+The Sailor Moon themed animation displays moon phases with Unicode stars for a magical effect. Uses standard Unicode characters for better terminal compatibility.
+
+```javascript
+const spinner = createSpinner({
+  loadingText: 'Fighting evil by moonlight...',
+  completionText: 'Moon Princess Power! Mission accomplished!',
+  errorText: 'The enemy was too strong...',
+  animationType: 'sailormoon'
+});
+
+spinner.start();
+// ... perform magical work ...
+spinner.succeed();
+```
+
+## API
+
+### `createSpinner(options)`
+
+Creates a new spinner instance.
+
+**Options:**
+- `loadingText` (string): Text to display while loading
+- `completionText` (string): Text to display on success (shown in green)
+- `errorText` (string): Text to display on error (shown in orange)
+- `animationType` ('dots' | 'progress' | 'sailormoon'): Type of animation (default: 'dots')
+
+**Returns:** Spinner instance with the following methods:
+
+### `spinner.start()`
+
+Starts the spinner animation.
+
+### `spinner.stop()`
+
+Stops the spinner and clears the interval. The line is cleared but no completion message is shown.
+
+### `spinner.succeed()`
+
+Stops the spinner and displays the success message with a green checkmark.
+
+### `spinner.fail()`
+
+Stops the spinner and displays the error message with an orange X mark.
+
+### `spinner.updateProgress(value)`
+
+Updates the progress bar (only for 'progress' animation type).
+
+**Parameters:**
+- `value` (number): Progress value between 0 and 100
+
+## Example: Integration with Invoice CLI
+
+Here's how you could integrate the spinner into the existing invoice CLI:
+
+```javascript
+import { argv } from "process";
+import { fromMarkdownToPdf } from "./markdownParser.mjs";
+import { generatePDF } from "./pdfGenerator.mjs";
+import { createSpinner } from "./spinner.mjs";
+
+if (argv.length < 4) {
+  console.error("Usage: node cli.mjs <input-markdown-file> <output-pdf-file>");
+  process.exit(1);
+}
+
+const inputFilePath = argv[2];
+const outputFilePath = argv[3];
+
+if (!inputFilePath || !outputFilePath) {
+  console.error("Input and output file paths are required");
+  process.exit(1);
+}
+
+const spinner = createSpinner({
+  loadingText: 'Generating invoice PDF...',
+  completionText: `Invoice PDF generated at: ${outputFilePath}`,
+  errorText: 'An error occurred while generating the invoice',
+  animationType: 'dots'
+});
+
+spinner.start();
+
+try {
+  const invoice = fromMarkdownToPdf(inputFilePath);
+  generatePDF(invoice, outputFilePath);
+  spinner.succeed();
+} catch (err) {
+  spinner.fail();
+  console.error(err);
+  process.exit(1);
+}
+```
+
+## Compatibility
+
+The spinner utility is designed to work across different shells and environments:
+
+### Terminal/Shell Support
+
+**Full Support (ANSI + Unicode):**
+- Unix/Linux shells (bash, zsh, sh, fish)
+- macOS Terminal.app and iTerm2
+- Windows Terminal
+- Windows PowerShell
+- WSL (Windows Subsystem for Linux)
+
+**Partial Support (Unicode may render differently):**
+- Windows cmd.exe (legacy) - Unicode characters display but may not render perfectly
+
+### Environment Detection
+
+The spinner automatically detects the environment and adjusts behavior:
+
+- **Interactive TTY**: Full animation with cursor control
+- **Non-TTY (pipes, redirects, CI/CD)**: Gracefully degrades - animations are skipped, no errors thrown
+- **Test Environments**: Compatible with `node:test` and other test runners
+
+### Technical Details
+
+- **ANSI Escape Codes**: Uses standard sequences for cursor control and colors
+  - Cursor: `\x1B[?25l` (hide) and `\x1B[?25h` (show)
+  - Colors: Green (`\x1B[32m`) for success, Orange (`\x1B[38;5;214m`) for errors
+- **TTY Detection**: All cursor operations are wrapped in `process.stdout.isTTY` checks
+- **Unicode Characters**: 
+  - Dots animation: ◐◓◑◒ (circular rotation)
+  - Sailor Moon animation: ◐◓◑◒ with ✦✧★ (moon phases with Unicode stars)
+  - Progress bar: █ (filled) and ░ (empty)
+  - Status symbols: ✔ (success) and ✖ (error)
+
+### Fallback Behavior
+
+In environments without TTY support:
+- Spinner animations are not displayed
+- Progress updates don't show
+- Success/error messages still print normally via `console.log` (with colors when supported)
+
+## Testing
+
+Run the test suite with Node.js built-in test runner:
+
+```bash
+npm test
+```
+
+The tests use `node:test` and include coverage for:
+- Creating spinners with different configurations
+- Starting and stopping animations
+- Success and error completion states
+- Progress bar updates and clamping
+- Edge cases (multiple start/stop calls)
+- TTY and non-TTY environment handling
