@@ -1,0 +1,166 @@
+/* Invoice PDF Styling */
+
+body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 0.75rem;
+    line-height: 1 / 1.618;
+    color: #2a2a2a;
+    letter-spacing: 0.01875rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "Georgia", "Times New Roman", serif;
+    color: #1a1a1a;
+    font-weight: 400;
+    letter-spacing: 0.03125rem;
+    text-transform: uppercase;
+    border: none;
+}
+
+/* Golden ratio modular scale (1.618) - h1 capped at 2.5rem */
+h1 {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+h2 {
+    font-size: 1.545rem;
+    letter-spacing: 0.125rem;
+}
+
+h3 {
+    font-size: 0.955rem;
+    letter-spacing: 0.1875rem;
+    font-weight: 300;
+    color: #666;
+    border-bottom: 0.0625rem solid #e0e0e0;
+}
+
+h4 {
+    font-size: 0.590rem;
+}
+
+h5 {
+    font-size: 0.365rem;
+}
+
+h6 {
+    font-size: 0.225rem;
+}
+
+/* Invoice header sections */
+strong {
+    color: #1a1a1a;
+    font-weight: 400;
+    letter-spacing: 0.03125rem;
+}
+
+/* Address styling - Kinfolk style */
+p {
+    margin: 0.9375rem 0;
+    line-height: 1 / 1.618;
+    color: #3a3a3a;
+}
+
+/* Tables - Minimalist Kinfolk style */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.875rem 0;
+    font-size: 0.625rem;
+    border: none;
+    background: transparent;
+}
+
+thead {
+    background-color: transparent;
+}
+
+th {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    font-weight: 400;
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.125rem;
+    color: #666;
+    border: none;
+    border-bottom: 0.0625rem solid #d0d0d0;
+    padding-bottom: 0.625rem;
+}
+
+td {
+    padding: 0.875rem 0.5rem;
+    border: none;
+    border-bottom: 0.0625rem solid #f0f0f0;
+    color: #2a2a2a;
+    font-size: 0.625rem;
+}
+
+tbody tr {
+    border: none;
+}
+
+
+
+/* Total row - subtle emphasis */
+tfoot tr,
+tbody tr:last-child {
+    background-color: transparent !important;
+    font-weight: 400;
+    border-top: 0.0625rem solid #d0d0d0;
+    border-bottom: none;
+}
+
+tfoot td,
+tbody tr:last-child td {
+    border-top: 0.0625rem solid #d0d0d0;
+    border-bottom: none;
+    padding: 1.125rem 0.5rem;
+    font-size: 0.6875rem;
+    color: #1a1a1a;
+}
+
+/* Amount column alignment */
+td:nth-child(4),
+th:nth-child(4) {
+    text-align: right;
+}
+
+/* Address table - side by side layout (first table after h2) */
+h2+table {
+    border: none;
+    margin: 2.5rem 0;
+    width: 100%;
+    box-shadow: none;
+}
+
+h2+table th,
+h2+table td {
+    border: none;
+    padding: 0;
+    vertical-align: top;
+    width: 50%;
+    background: transparent;
+    font-size: 0.625rem;
+    line-height: 1 / 1.618;
+}
+
+h2+table td:first-child {
+    text-align: left;
+    padding-right: 2.5rem;
+}
+
+h2+table td:last-child {
+    text-align: right;
+    padding-left: 2.5rem;
+}
+
+h2+table strong {
+    font-weight: 400;
+}
