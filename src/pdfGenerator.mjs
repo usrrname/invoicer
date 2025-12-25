@@ -12,47 +12,43 @@ const __dirname = dirname(__filename);
  * @param outputFilePath path to save the generated PDF.
  */
 export function generatePDF(invoice, outputFilePath) {
-  // Calculate total from line items and expenses
-  const lineItemsTotal = invoice.lineItems.reduce((sum, item) => sum + item.amount, 0);
+
+  const lineItemsTotal = invoice.lineItems.reduce((sum, item) => sum + parseFloat(item.amount ?? 0, 2), 0);
+
   const expensesTotal = Array.isArray(invoice.expenses) 
-    ? invoice.expenses.reduce((sum, expense) => sum + expense.cost, 0)
+    ? invoice.expenses.reduce((sum, expense) => sum + parseFloat(expense.amount, 2), 0)
     : (invoice.expenses || 0);
   
   const calculatedTotal = lineItemsTotal + expensesTotal;
   const total = invoice.total > 0 ? invoice.total : calculatedTotal;
-
-  const markdownContent = `## Invoice \n
-
-   **Bill To:** ${invoice.recipientName} ${invoice.recipientAddress} ${invoice.telephoneNumber}
   
-    **From:** ${invoice.invoicerName} ${invoice.invoicerEmail} ${invoice.invoicerAddress}\n
+  const markdownContent = `## Invoice #${invoice.invoiceId}
+| **To:** ${invoice.payee.name} | **From:** ${invoice.invoicer.name}                                    |
+|:------------------------------|:------------------------------------------------- |
+| ${invoice.payee.address}      | ${invoice.invoicer.email} ${invoice.invoicer.address} ${invoice.invoicer.telephone} |
 
-### Line Items:
-
-| Description | Date | Hours/Name | Amount |
-|-------------|------|-----------|--------|
+| **Description** | **Date** | **Hours** | **Amount** |
+|:----------------|:---------|:----------|:-----------|
 ${invoice.lineItems
-      .map((item) => `| ${item.description} | ${item.date} | ${item.hours} | $${item.amount} |`)
-    .join('\n')}
+    .map((item) => `| ${item.description} | ${item.date ?? ''} | ${item.hours ?? ''} | $${item.amount} |`)
+    .join('\n')} |
 
-### Expenses:
-
-| Description | Date | Name | Amount |
-|-------------|------|-------|--------|
-${Array.isArray(invoice.expenses) 
+| **Description** | **Date** | **Name** | **Amount** |
+|:----------------|:---------|:---------|:-----------|
+${Array.isArray(invoice.expenses) && invoice.expenses.length > 0
     ? invoice.expenses
-        .map((expense) => `| ${expense.description} | ${expense.date} | ${expense.name} | $${expense.cost} |`)
+        .map((expense) => `| ${expense.description} | ${expense.date} | ${expense.name} | $${expense.amount} |`)
         .join('\n')
     : '| | | | |'}
 | **Total** | | | **$${total}** |
 `;
 
   // Save the markdown content to a temporary file
-  const tempMarkdownPath = 'tempInvoice.md';
+  const tempMarkdownPath = 'temp-invoice.md';
   fs.writeFileSync(tempMarkdownPath, markdownContent);
 
   // Get path to CSS file
-  const cssPath = join(__dirname, 'invoice-styles.css');
+  const cssPath = join(__dirname, 'styles.css');
 
   // Convert markdown to PDF with styling
   markdownpdf({
