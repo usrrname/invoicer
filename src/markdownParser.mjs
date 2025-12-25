@@ -2,6 +2,7 @@ import * as fs from 'fs';
 
 /**
  * @type {Invoice}
+ * @property {string} invoiceId
  * @property {string} recipientName
  * @property {string} recipientAddress
  * @property {string} telephoneNumber
@@ -13,6 +14,7 @@ import * as fs from 'fs';
  * @property {number} total
  */
 export const Invoice = {
+  invoiceId: '',
   recipientName: '',
   recipientAddress: '',
   telephoneNumber: '',
@@ -42,6 +44,7 @@ export function fromMarkdownToPdf(filePath) {
   
   lines.forEach((line) => {
     const propertyMapping = {
+      'Invoice ID:': 'invoiceId',
       'Recipient Name:': 'recipientName',
       'Recipient Address:': 'recipientAddress',
       'Telephone Number:': 'telephoneNumber',
@@ -60,7 +63,7 @@ export function fromMarkdownToPdf(filePath) {
 
     if (line.startsWith('Line Item:')) {
       const parts = line.replace('Line Item:', '').split(',').map(p => p.trim());
-      const [description, date, hours, amount] = parts;
+      const [description, date, hours, amount, invoiceId] = parts;
       if (
         parts.length >= 4 &&
         description?.trim() &&
@@ -69,6 +72,7 @@ export function fromMarkdownToPdf(filePath) {
         amount?.trim()
       ) {
         invoice.lineItems.push({
+          invoiceId: invoiceId?.trim() ?? '',
           description: description?.trim() ?? '',
           date: date?.trim() ?? '',
           hours: parseFloat(hours?.trim() ?? '0'),
@@ -93,7 +97,7 @@ export function fromMarkdownToPdf(filePath) {
         });
       }
     } else if (line.startsWith('Total:')) {
-      invoice.total = parseFloat(line.replace('Total:', '').trim());
+      invoice.total = parseFloat(line.slice('Total:'.length).trim());
     }
   });
 
