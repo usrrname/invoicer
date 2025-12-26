@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "chmod +x setup.sh && ./setup.sh",
     "lint": "tsc --noEmit",
     "build": "tsc",
-    "test": "node --test src/test-spinner.mjs"
+    "test": "node --test"
   },
   "keywords": [],
   "author": "usrrname",
