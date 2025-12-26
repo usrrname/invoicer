@@ -1,6 +1,15 @@
 import { argv } from "process";
 import { fromMarkdownToPdf } from "./markdownParser.mjs";
 import { generatePDF } from "./pdfGenerator.mjs";
+import { createSpinner } from "./spinner.mjs";
+
+
+const spinner = createSpinner({
+  loadingText: 'Generating PDF...',
+  completionText: 'PDF generated successfully',
+  errorText: 'Failed to generate PDF',
+  animationType: 'dots'
+});
 
 /**
  * CLI for the invoicer application.
@@ -20,11 +29,15 @@ if (!inputFilePath || !outputFilePath) {
   process.exit(1);
 }
 
-try {
-  const invoice = fromMarkdownToPdf(inputFilePath);
-  generatePDF(invoice, outputFilePath);
-  console.log(`Invoice PDF generated at: ${outputFilePath}`);
-} catch (err) {
-  console.error("An error occurred:", err);
-}
+(async () => {
+  try {
+    spinner.start();
+    const invoice = fromMarkdownToPdf(inputFilePath);
+    await generatePDF(invoice, outputFilePath);
+    spinner.succeed(`PDF generated successfully at ${outputFilePath}`);
+  } catch (err) {
+    spinner.fail("An error occurred:", err);
+    process.exit(1);
+  }
+})();
 
