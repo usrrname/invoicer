@@ -94,20 +94,28 @@ function parseListItem(line) {
 }
 
 /**
+ * Checks if a line is a comment
+ * @param {string} line - The line to check
+ * @returns {boolean}
+ */
+function isComment(line) {
+  return line.trim().startsWith('<!--') && line.trim().endsWith('-->');
+}
+
+/**
  * @param {string} filePath
  * @returns {Invoice}
  */
 export function fromMarkdownToPdf(filePath) {
   const markdownContent = fs.readFileSync(filePath, 'utf-8');
   const lines = markdownContent.split('\n');
-
-  const isComment = (line) => line.trim().startsWith('<!--') && line.trim().endsWith('-->');
   
   if (lines.length === 0) {
     throw new Error('File is empty');
   }
 
   const currentDate = new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate();
+
   const invoice = {
     invoiceId: '',
     payer: { name: '', address: '', telephone: '' },
@@ -154,7 +162,7 @@ export function fromMarkdownToPdf(filePath) {
     }
 
     // Handle list items in Recipient section
-    if (currentSection === 'recipient') {
+    if (currentSection === 'payer') {
       const listItem = parseListItem(trimmedLine);
       if (listItem) {
         switch (listItem.key) {

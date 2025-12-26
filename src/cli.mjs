@@ -36,6 +36,7 @@ if (!inputFilePath || !outputFilePath) {
     await generatePDF(invoice, outputFilePath);
     spinner.succeed(`PDF generated successfully at ${outputFilePath}`);
   } catch (err) {
+    console.error(err);
     spinner.fail("An error occurred:", err);
     process.exit(1);
   }

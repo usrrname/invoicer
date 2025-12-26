@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-      "types": [
+    "types": [
       "node"
     ],
     "module": "NodeNext",
@@ -12,6 +12,13 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "demo-spinner.mjs"]
+  "include": [
+    "src/**/*",
+  ],
+  "exclude": [
+    "node_modules",
+    "test/**/*",
+    "dist",
+    "demo-spinner.mjs"
+  ]
 }

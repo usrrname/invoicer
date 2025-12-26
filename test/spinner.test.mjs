@@ -1,6 +1,6 @@
-import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { createSpinner } from './spinner.mjs';
+import { describe, test } from 'node:test';
+import { createSpinner } from '../src/spinner.mjs';
 
 // Helper to create a promise-based delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
