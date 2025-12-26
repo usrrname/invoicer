@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 
 /**
- * @typedef {Object} Payee
+ * @typedef {Object} Payer
  * @property {string} name
  * @property {string} address
  * @property {string} telephone
- * @typedef {Object} Invoicer
+ * @typedef {Object} Payee
  * @property {string} name
  * @property {string} email
  * @property {string} address
@@ -22,20 +22,21 @@ import * as fs from 'fs';
  * @property {number} amount
  * @type {Invoice}
  * @property {string} invoiceId
+ * @property {Payer} payer
  * @property {Payee} payee
- * @property {Invoicer} invoicer
  * @property {Array<LineItem>} lineItems
  * @property {Array<Expense>} expenses
  * @property {number} total
+ * @property {Date | null } date - date invoice issued on
  */
 export const Invoice = {
   invoiceId: '',
-  payee: {
+  payer: {
     name: '',
     address: '',
     telephone: '',
   },
-  invoicer: {
+  payee: {
     name: '',
     email: '',
     address: '',
@@ -44,125 +45,52 @@ export const Invoice = {
   lineItems: [],
   expenses: [],
   total: 0,
+  date: '',
+}
+
+
+/**
+ * Parses a markdown table row into an array of cell values
+ * @param {string} line - The table row line
+ * @returns {string[]} Array of cell values
+ */
+function parseTableRow(line) {
+  // Remove leading/trailing pipes and split by pipe
+  return line
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map(cell => cell.trim());
 }
 
 /**
- * Property mapping from markdown prefixes to invoice property paths
+ * Checks if a line is a table separator (e.g., |---|---|)
+ * @param {string} line - The line to check
+ * @returns {boolean}
  */
-const PROPERTY_MAPPING = {
-  'Invoice ID:': 'invoiceId',
-  'Recipient Name:': 'payee.name',
-  'Recipient Address:': 'payee.address',
-  'Recipient Telephone:': 'payee.telephone',
-  'Invoicer Name:': 'invoicer.name',
-  'Invoicer Email:': 'invoicer.email',
-  'Invoicer Address:': 'invoicer.address',
-  'Invoicer Telephone:': 'invoicer.telephone',
-};
-
-/**
- * Sets a value on an object using a dot-notation path
- * @param {Object} obj - The object to set the value on
- * @param {string} path - The property path (e.g., 'payee.name' or 'invoiceId')
- * @param {any} value - The value to set
- */
-function setNestedProperty(obj, path, value) {
-  if (path.includes('.')) {
-    const [parent, child] = path.split('.');
-    obj[parent][child] = value;
-  } else {
-    obj[path] = value;
-  }
+function isTableSeparator(line) {
+  return /^\|[\s\-:|]+\|$/.test(line.trim());
 }
 
 /**
- * Parses a line item from a markdown line
+ * Checks if a line is a table row
+ * @param {string} line - The line to check
+ * @returns {boolean}
+ */
+function isTableRow(line) {
+  return line.trim().startsWith('|') && line.trim().endsWith('|');
+}
+
+/**
+ * Parses a list item (e.g., "- Name: value")
  * @param {string} line - The line to parse
- * @returns {LineItem|null} The parsed line item or null if invalid
+ * @returns {{key: string, value: string}|null}
  */
-function parseLineItem(line) {
-  const parts = line.replace('Line Item:', '')
-    .split(',')
-    .map(p => p.trim());
-  
-  const [description, date, hours, amount, invoiceId] = parts;
-  
-  if (parts.length < 4 || !description || !date || !hours || !amount) {
-    return null;
-  }
-
-  return {
-    invoiceId: invoiceId ?? '',
-    description: description,
-    date: date,
-    hours: parseFloat(hours) || 0,
-    amount: parseFloat(amount) || 0,
-  };
-}
-
-/**
- * Parses an expense from a markdown line
- * @param {string} line - The line to parse
- * @returns {Expense|null} The parsed expense or null if invalid
- */
-function parseExpense(line) {
-  const parts = line.replace('Expense:', '')
-    .split(',')
-    .map(p => p.trim());
-  
-  const [date, name, description, amount] = parts;
-  
-  if (parts.length < 4 || !date || !name || !description || !amount) {
-    return null;
-  }
-
-  return {
-    date: date,
-    name: name,
-    description: description,
-    amount: parseFloat(amount) || 0,
-  };
-}
-
-/**
- * Processes a single line and updates the invoice object
- * @param {string} line - The line to process
- * @param {Invoice} invoice - The invoice object to update
- */
-function processLine(line, invoice) {
-  // Handle property mappings (Invoice ID, Recipient, Invoicer fields)
-  for (const prefix in PROPERTY_MAPPING) {
-    if (line.startsWith(prefix)) {
-      const value = line.replace(prefix, '').trim();
-      const path = PROPERTY_MAPPING[prefix];
-      setNestedProperty(invoice, path, value);
-      return;
-    }
-  }
-
-  // Handle line items
-  if (line.startsWith('Line Item:')) {
-    const lineItem = parseLineItem(line);
-    if (lineItem) {
-      invoice.lineItems.push(lineItem);
-    }
-    return;
-  }
-
-  // Handle expenses
-  if (line.startsWith('Expense:')) {
-    const expense = parseExpense(line);
-    if (expense) {
-      invoice.expenses.push(expense);
-    }
-    return;
-  }
-
-  // Handle total
-  if (line.startsWith('Total:')) {
-    const totalValue = line.replace('Total:', '').trim();
-    invoice.total = parseFloat(totalValue) || 0;
-  }
+function parseListItem(line) {
+  const match = line.match(/^-\s*([^:]+):\s*(.+)$/);
+  const key = match[1].trim().toLowerCase()
+  const value = match[2].trim()
+  return { key, value };
 }
 
 /**
@@ -172,16 +100,169 @@ function processLine(line, invoice) {
 export function fromMarkdownToPdf(filePath) {
   const markdownContent = fs.readFileSync(filePath, 'utf-8');
   const lines = markdownContent.split('\n');
+
+  const isComment = (line) => line.trim().startsWith('<!--') && line.trim().endsWith('-->');
   
   if (lines.length === 0) {
     throw new Error('File is empty');
   }
 
-  const invoice = Object.assign({}, Invoice);
-  
-  lines.forEach((line) => {
-    processLine(line, invoice);
-  });
+  const currentDate = new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate();
+  const invoice = {
+    invoiceId: '',
+    payer: { name: '', address: '', telephone: '' },
+    payee: { name: '', email: '', address: '', telephone: '' },
+    lineItems: [],
+    expenses: [],
+    totalExpenses: 0,
+    total: 0,
+    date: currentDate,
+  };
+
+  let currentSection = null;
+  let inLineItemsTable = false;
+  let inExpensesTable = false;
+  let tableHeaderParsed = false;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // Skip empty lines
+    if (!trimmedLine || isComment(trimmedLine)) {
+      continue;
+    }
+
+    // Detect section headings
+    if (trimmedLine.startsWith('## ')) {
+      const sectionName = trimmedLine.replace('## ', '').toLowerCase();
+      currentSection = sectionName;
+      inLineItemsTable = sectionName === 'line items';
+      inExpensesTable = sectionName === 'expenses';
+      tableHeaderParsed = false;
+      continue;
+    }
+
+    // Handle Invoice ID at the top level
+    if (trimmedLine.startsWith('Invoice ID:')) {
+      invoice.invoiceId = trimmedLine.replace('Invoice ID:', '').trim();
+      continue;
+    }
+
+    if (trimmedLine.startsWith('Date:')) {
+      invoice.date = trimmedLine.replace('Date:', '').trim() ?? currentDate;
+      continue;
+    }
+
+    // Handle list items in Recipient section
+    if (currentSection === 'recipient') {
+      const listItem = parseListItem(trimmedLine);
+      if (listItem) {
+        switch (listItem.key) {
+          case 'name':
+            invoice.payer.name = listItem.value;
+            break;
+          case 'address':
+            invoice.payer.address = listItem.value;
+            break;
+          case 'telephone':
+            invoice.payer.telephone = listItem.value;
+            break;
+        }
+      }
+      continue;
+    }
+
+    // Handle list items in payee section
+    if (currentSection === 'payee') {
+      const listItem = parseListItem(trimmedLine);
+      if (listItem) {
+        switch (listItem.key) {
+          case 'name':
+            invoice.payee.name = listItem.value;
+            break;
+          case 'email':
+            invoice.payee.email = listItem.value;
+            break;
+          case 'address':
+            invoice.payee.address = listItem.value;
+            break;
+          case 'telephone':
+            invoice.payee.telephone = listItem.value;
+            break;
+        }
+      }
+      continue;
+    }
+
+    // Handle Line Items table
+    if (inLineItemsTable && isTableRow(trimmedLine)) {
+      // Skip separator rows
+      if (isTableSeparator(trimmedLine)) {
+        continue;
+      }
+      
+      const cells = parseTableRow(trimmedLine);
+      
+      // Skip header row (first row after section heading)
+      if (!tableHeaderParsed) {
+        tableHeaderParsed = true;
+        continue;
+      }
+      
+      // Parse data row: Description | Date | Hours | Amount
+      if (cells.length >= 4) {
+        const [description, date, hours, amount] = cells;
+        if (description && date) {
+          invoice.lineItems.push({
+            description,
+            date,
+            hours: parseFloat(hours) || 0,
+            amount: parseFloat(amount) || 0,
+          });
+        }
+      }
+      continue;
+    }
+
+    // Handle Expenses table
+    if (inExpensesTable && isTableRow(trimmedLine)) {
+      // Skip separator rows
+      if (isTableSeparator(trimmedLine)) {
+        continue;
+      }
+      
+      const cells = parseTableRow(trimmedLine);
+      
+      // Skip header row
+      if (!tableHeaderParsed) {
+        tableHeaderParsed = true;
+        continue;
+      }
+      
+      // Parse data row: Date | Name | Description | Amount
+      if (cells.length >= 4) {
+        const [date, name, description, amount] = cells;
+        if (date && name) {
+          invoice.expenses.push({
+            date,
+            name,
+            description,
+            amount: parseFloat(amount) || 0,
+          });
+        }
+      }
+      continue;
+    }
+
+    // Handle Total section
+    if (currentSection === 'total') {
+      const totalValue = parseFloat(trimmedLine);
+      if (!isNaN(totalValue)) {
+        invoice.total = totalValue;
+      }
+      continue;
+    }
+  }
 
   if (invoice.lineItems.length === 0 && invoice.expenses.length === 0) {
     throw new Error('No line items or expenses found in the invoice');
@@ -189,4 +270,3 @@ export function fromMarkdownToPdf(filePath) {
 
   return invoice;
 }
-

@@ -6,13 +6,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-
 /**
  * Generates a PDF from an Invoice object.
  * @param {Invoice} invoice - The invoice details.
- * @param outputFilePath path to save the generated PDF.
+ * @param outputFileName name of the output PDF file.
  */
-export async function generatePDF(invoice, outputFilePath) {
+export async function generatePDF(invoice, outputFileName) {
+
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
+  const day = new Date().getDate();
+
+  const fileNameHasExtension = outputFileName.endsWith('.pdf');
+
+  const outputFilePath = join(__dirname, '..', 'records', year.toString(), month.toString(), fileNameHasExtension ? outputFileName : `${outputFileName}.pdf`);
 
   const lineItemsTotal = invoice.lineItems.reduce((sum, item) => sum + parseFloat(item.amount ?? 0, 2), 0);
 
@@ -21,32 +28,31 @@ export async function generatePDF(invoice, outputFilePath) {
     : (invoice.expenses || 0);
   
   const calculatedTotal = lineItemsTotal + expensesTotal;
-  const total = invoice.total > 0 ? invoice.total : calculatedTotal;
+  const total = lineItemsTotal + expensesTotal;
   
   const markdownContent = `## Invoice #${invoice.invoiceId}
-| **To:** ${invoice.payee.name} | **From:** ${invoice.invoicer.name}                                    |
+| **To:** ${invoice.payer.name} | **From:** ${invoice.payee.name}                                    |
 |:------------------------------|:------------------------------------------------- |
-| ${invoice.payee.address}      | ${invoice.invoicer.email} ${invoice.invoicer.address} ${invoice.invoicer.telephone} |
+| ${invoice.payer.address}      | ${invoice.payee.address} ${invoice.payee.telephone} ${invoice.payee.email}|
 
-| **Description** | **Date** | **Hours** | **Amount** |
-|:----------------|:---------|:----------|:-----------|
+| **Date** | **Description** | **Hours** | **Amount** |
+|:---------|:----------------|:----------|:-----------|
 ${invoice.lineItems
     .map((item) => `| ${item.description} | ${item.date ?? ''} | ${item.hours ?? ''} | $${item.amount} |`)
     .join('\n')} |
 
-| **Description** | **Date** | **Name** | **Amount** |
-|:----------------|:---------|:---------|:-----------|
+| **Date** | **Name** | **Description** | **Amount** |
+|:---------|:---------|:----------------|:-----------|
 ${Array.isArray(invoice.expenses) && invoice.expenses.length > 0
     ? invoice.expenses
         .map((expense) => `| ${expense.description} | ${expense.date} | ${expense.name} | $${expense.amount} |`)
         .join('\n')
     : '| | | | |'}
-| **Total** | | | **$${total}** |
-`;
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
-  const day = new Date().getDate();
+  
+| **Total Expenses** | | | ${expensesTotal > 0 ? `**$${expensesTotal}**` : ''} |
 
+| **Total** | | | ${total > 0 ? `**$${total}**` : ''} |
+`;
   // Save the markdown content to a temporary file
   const tempMarkdownPath = `${year}-${month}-${day}-temp-invoice.md`;
   fs.writeFileSync(tempMarkdownPath, markdownContent);
@@ -81,11 +87,13 @@ ${Array.isArray(invoice.expenses) && invoice.expenses.length > 0
       throw new Error('Failed to generate PDF');
     }
   } catch (error) {
-    // Clean up the temporary markdown file even on error
+    console.error(error);
+  }
+  finally {
+    // Clean up the temporary markdown file
     if (fs.existsSync(tempMarkdownPath)) {
       fs.unlinkSync(tempMarkdownPath);
     }
-    throw error;
   }
 }
 
