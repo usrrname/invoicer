@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 dist/
 *.log
 .env
@@ -9,3 +9,5 @@ demo-spinner.mjs
 *.txt
 tmp/*
 temp-invoice.md
+.package-lock.json
+*-temp-invoice.md
