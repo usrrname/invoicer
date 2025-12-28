@@ -94,7 +94,7 @@ invoicer/
 
 ## Dependencies
 
-- **md-to-pdf**: Converts markdown to PDF
+- **tinypdf**: Converts markdown to PDF
 - **dotenv**: Environment variable management
 
 ### Dev Dependencies

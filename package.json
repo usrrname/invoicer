@@ -19,6 +19,6 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "md-to-pdf": "^5.2.3"
+    "tinypdf": "^0.3.0"
   }
 }
