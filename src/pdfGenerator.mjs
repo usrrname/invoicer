@@ -21,15 +21,20 @@ const getCurrentDate = () => {
  * @param {string} outputFileName - Name of the output PDF file.
  */
 export async function generatePDF(invoice, outputFileName) {
-  const currentDate = getCurrentDate();
+  // if there is a date in the output markdown file, use it, otherwise use the current date and year
+  const dateFromMarkdown = invoice.date;
+  let outputFolder = __dirname;
+  if (dateFromMarkdown) {
+    const [year, month, day] = dateFromMarkdown.split('-');
+    outputFolder = join(__dirname, '..', 'records', year, month);
+  } else {
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth() + 1;
+    outputFolder = join(__dirname, '..', 'records', year, month);
+  }
+
   const fileNameHasExtension = outputFileName.endsWith('.pdf');
-  const outputFilePath = join(
-    __dirname,
-    '..',
-    'records',
-    currentDate.toString(),
-    fileNameHasExtension ? outputFileName : `${currentDate}-${invoice.invoiceId}-invoice.pdf`
-  );
+  const outputFilePath = join(outputFolder, fileNameHasExtension ? outputFileName : `${invoice.date}-${invoice.invoiceId}-invoice.pdf`);
 
   const lineItemsTotal = invoice.lineItems.reduce(
     (sum, item) => sum + parseFloat(item.amount ?? 0, 2),
