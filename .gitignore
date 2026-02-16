@@ -11,4 +11,5 @@ tmp/*
 temp-invoice.md
 .package-lock.json
 *-temp-invoice.md
+.tmp-invoice.html
 records/

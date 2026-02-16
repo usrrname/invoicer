@@ -32,4 +32,47 @@ describe('fromMarkdownToPdf', () => {
         assert.throws(() => fromMarkdownToPdf(invalidMarkdownPath), Error, 'No line items or expenses found in the invoice');
     });
 
+    test('should validate matching totals for expenses and grand total', () => {
+        const validTotalsPath = join(__dirname, 'totals-valid.md');
+        const invoice = fromMarkdownToPdf(validTotalsPath);
+        
+        assert.ok(invoice, 'Invoice should be created');
+        assert.strictEqual(invoice.invoiceId, 'INV-2025-001', 'Invoice ID should match');
+        // Verify calculated totals are stored
+        assert.strictEqual(invoice.totalLineItems, 1000.00, 'Line items total should be 1000.00');
+        assert.strictEqual(invoice.totalExpenses, 166.57, 'Expenses total should be 166.57');
+        assert.strictEqual(invoice.calculatedTotal, 1166.57, 'Grand total should be 1166.57');
+    });
+
+    test('should throw error when expenses total does not match calculated sum', () => {
+        const mismatchPath = join(__dirname, 'totals-expenses-mismatch.md');
+        
+        assert.throws(
+            () => fromMarkdownToPdf(mismatchPath),
+            Error,
+            /Expenses total \(written: 200\.00\) does not match calculated sum \(166\.57\)/
+        );
+    });
+
+    test('should throw error when grand total does not match calculated sum', () => {
+        const mismatchPath = join(__dirname, 'totals-grand-mismatch.md');
+        
+        assert.throws(
+            () => fromMarkdownToPdf(mismatchPath),
+            Error,
+            /Grand total \(written: 1500\.00\) does not match calculated sum \(1166\.57\)/
+        );
+    });
+
+    test('should validate matching totals when grand total is in Total section', () => {
+        const validSectionPath = join(__dirname, 'totals-valid-section.md');
+        const invoice = fromMarkdownToPdf(validSectionPath);
+        
+        assert.ok(invoice, 'Invoice should be created');
+        assert.strictEqual(invoice.invoiceId, 'INV-2025-004', 'Invoice ID should match');
+        assert.strictEqual(invoice.totalLineItems, 1000.00, 'Line items total should be 1000.00');
+        assert.strictEqual(invoice.totalExpenses, 166.57, 'Expenses total should be 166.57');
+        assert.strictEqual(invoice.calculatedTotal, 1166.57, 'Grand total should be 1166.57');
+    });
+
 });

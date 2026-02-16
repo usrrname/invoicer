@@ -80,9 +80,10 @@ invoicer/
 ├── src/
 │   ├── cli.mjs              # Command-line interface
 │   ├── markdownParser.mjs   # Markdown to Invoice parser
-│   ├── pdfGenerator.mjs    # PDF generation from Invoice
-│   ├── spinner.mjs          # Loading spinner component
-│   └── styles.css           # PDF styling
+│   ├── pdfGenerator.mjs     # Renders data to PDF (HTML+CSS via Puppeteer)
+│   ├── invoiceTemplate.mjs   # HTML structure and data only (no styling)
+│   ├── spinner.mjs           # Loading spinner component
+│   └── styles.css            # All PDF styling (CSS only)
 ├── test/                    # Test files
 ├── records/                 # Generated PDF output directory
 │   └── YYYY/MM/            # Organized by year and month
@@ -94,7 +95,7 @@ invoicer/
 
 ## Dependencies
 
-- **tinypdf**: Converts markdown to PDF
+- **puppeteer**: Renders HTML+CSS to PDF (styling is in `src/styles.css` only)
 - **dotenv**: Environment variable management
 
 ### Dev Dependencies

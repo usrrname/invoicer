@@ -9,6 +9,9 @@
     "build": "tsc",
     "test": "node --test"
   },
+  "bin": {
+    "invoicer": "./src/cli.mjs --input invoice-template.md"
+  },
   "keywords": [],
   "author": "usrrname",
   "license": "ISC",
@@ -19,6 +22,6 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "tinypdf": "^0.3.0"
+    "puppeteer": "^23.0.0"
   }
 }

@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { calculateAndValidateTotals } from './totalsCalculator.mjs';
 
 /**
  * @typedef {Object} Payer
@@ -103,6 +104,19 @@ function isComment(line) {
 }
 
 /**
+ * Parses a numeric value from a string, removing currency symbols, commas, and whitespace
+ * @param {string} str - The string to parse
+ * @returns {number|null} The parsed number or null if not parseable
+ */
+function parseNumericValue(str) {
+  if (!str) return null;
+  // Remove $, commas, and whitespace, then parse
+  const cleaned = str.replace(/[$,\s]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? null : parsed;
+}
+
+/**
  * @param {string} filePath
  * @returns {Invoice}
  */
@@ -131,6 +145,8 @@ export function fromMarkdownToPdf(filePath) {
   let inLineItemsTable = false;
   let inExpensesTable = false;
   let tableHeaderParsed = false;
+  let explicitExpensesTotal = null;
+  let explicitGrandTotal = null;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
@@ -247,6 +263,29 @@ export function fromMarkdownToPdf(filePath) {
         continue;
       }
       
+      // Check for "Total Expenses" row
+      if (cells.length >= 1) {
+        const firstCell = cells[0].toLowerCase().trim();
+        if (firstCell.includes('total expenses')) {
+          // Extract the last cell as the total value
+          const lastCell = cells[cells.length - 1];
+          const parsedValue = parseNumericValue(lastCell);
+          if (parsedValue !== null) {
+            explicitExpensesTotal = parsedValue;
+          }
+          continue;
+        }
+        // Check for "Total" row (grand total, not "Total Expenses")
+        if (firstCell.includes('total') && !firstCell.includes('expenses')) {
+          const lastCell = cells[cells.length - 1];
+          const parsedValue = parseNumericValue(lastCell);
+          if (parsedValue !== null) {
+            explicitGrandTotal = parsedValue;
+          }
+          continue;
+        }
+      }
+      
       // Parse data row: Date | Name | Description | Amount
       if (cells.length >= 4) {
         const [date, name, description, amount] = cells;
@@ -264,9 +303,13 @@ export function fromMarkdownToPdf(filePath) {
 
     // Handle Total section
     if (currentSection === 'total') {
-      const totalValue = parseFloat(trimmedLine);
-      if (!isNaN(totalValue)) {
+      const totalValue = parseNumericValue(trimmedLine);
+      if (totalValue !== null) {
         invoice.total = totalValue;
+        // Also store as explicit grand total if not already set from table row
+        if (explicitGrandTotal === null) {
+          explicitGrandTotal = totalValue;
+        }
       }
       continue;
     }
@@ -276,5 +319,6 @@ export function fromMarkdownToPdf(filePath) {
     throw new Error('No line items or expenses found in the invoice');
   }
 
-  return invoice;
+  // Calculate and validate totals
+  return calculateAndValidateTotals(invoice, explicitExpensesTotal, explicitGrandTotal);
 }

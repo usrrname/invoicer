@@ -1,80 +1,72 @@
 import * as fs from 'fs';
 import { dirname, join } from 'path';
-import { markdown } from 'tinypdf';
 import { fileURLToPath } from 'url';
+import { buildInvoiceHtml } from './invoiceTemplate.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/**
- * Generates a PDF from an Invoice object.
- * @param {Invoice} invoice - The invoice details.
- * @param outputFileName name of the output PDF file.
- */
-export async function generatePDF(invoice, outputFileName) {
-
+const getCurrentDate = () => {
   const year = new Date().getFullYear();
   const month = new Date().getMonth() + 1;
   const day = new Date().getDate();
+  return `${year}-${month}-${day}`;
+};
 
+/**
+ * Generates a PDF from an Invoice object. Handles only data and rendering
+ * orchestration; all styling is in styles.css (applied via HTML).
+ *
+ * @param {Invoice} invoice - The invoice details.
+ * @param {string} outputFileName - Name of the output PDF file.
+ */
+export async function generatePDF(invoice, outputFileName) {
+  const currentDate = getCurrentDate();
   const fileNameHasExtension = outputFileName.endsWith('.pdf');
+  const outputFilePath = join(
+    __dirname,
+    '..',
+    'records',
+    currentDate.toString(),
+    fileNameHasExtension ? outputFileName : `${currentDate}-${invoice.invoiceId}-invoice.pdf`
+  );
 
-  const outputFilePath = join(__dirname, '..', 'records', year.toString(), month.toString(), fileNameHasExtension ? outputFileName : `${year}-${month}-${day}-${invoice.invoiceId}-invoice.pdf`);
-
-  const lineItemsTotal = invoice.lineItems.reduce((sum, item) => sum + parseFloat(item.amount ?? 0, 2), 0);
-
-  const expensesTotal = Array.isArray(invoice.expenses) 
-    ? invoice.expenses.reduce((sum, expense) => sum + parseFloat(+expense.amount, 2), 0)
+  const lineItemsTotal = invoice.lineItems.reduce(
+    (sum, item) => sum + parseFloat(item.amount ?? 0, 2),
+    0
+  );
+  const expensesTotal =
+    Array.isArray(invoice.expenses) ?
+      invoice.expenses.reduce((sum, expense) => sum + parseFloat(+expense.amount, 2), 0)
     : (invoice.expenses || 0);
-  
-  const calculatedTotal = lineItemsTotal + expensesTotal;
   const total = lineItemsTotal + expensesTotal;
-  
-  const markdownContent = `## Invoice #${invoice.invoiceId}
-| **To:** ${invoice.payer.name} | **From:** ${invoice.payee.name}                                    |  
-|:------------------------------|:------------------------------------------------- |
-| ${invoice.payer.address}      | ${invoice.payee.address} ${invoice.payee.telephone} ${invoice.payee.email}|
 
-| **Date** | **Description** | **Hours** | **Amount** |
-|:---------|:----------------|:----------|:-----------|
-${invoice.lineItems
-    .map((item) => `| ${item.description} | ${item.date ?? ''} | ${item.hours ?? ''} | $${item.amount} |`)
-    .join('\n')} |
+  const totals = { lineItemsTotal, expensesTotal, total };
+  const html = buildInvoiceHtml(invoice, totals);
 
-| **Date** | **Name** | **Description** | **Amount** |
-|:---------|:---------|:----------------|:-----------|
-${Array.isArray(invoice.expenses) && invoice.expenses.length > 0
-    ? invoice.expenses
-        .map((expense) => `| ${expense.description} | ${expense.date} | ${expense.name} | $${expense.amount} |`)
-        .join('\n')
-    : '| | | | |'}
-  
-| **Total Expenses** | | | ${expensesTotal > 0 ? `**$${expensesTotal}**` : ''} |
+  const dir = dirname(outputFilePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
-| **Total** | | | ${total > 0 ? `**$${total}**` : ''} |
-`;
-  // Convert markdown to PDF
+  const tempHtmlPath = join(__dirname, '.tmp-invoice.html');
+  fs.writeFileSync(tempHtmlPath, html, 'utf-8');
+
   try {
-    // A4 dimensions in points: 595.28 x 841.89
-    // Convert 1cm margin to points: 1cm ≈ 28.35 points
-    const marginPoints = 28.35;
-    const a4Width = 595.28;
-    const a4Height = 841.89;
-    
-    const pdfBuffer = markdown(markdownContent, {
-      width: a4Width - (marginPoints * 2), // Account for left and right margins
-      height: a4Height - (marginPoints * 2), // Account for top and bottom margins
-      margin: marginPoints,
+    const puppeteer = await import('puppeteer');
+    const browser = await puppeteer.default.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.goto('file://' + tempHtmlPath, { waitUntil: 'networkidle0' });
+    await page.pdf({
+      path: outputFilePath,
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' },
     });
-
-    if (pdfBuffer) {
-      fs.writeFileSync(outputFilePath, Buffer.from(pdfBuffer));
-    } else {
-      throw new Error('Failed to generate PDF');
+    await browser.close();
+  } finally {
+    if (fs.existsSync(tempHtmlPath)) {
+      fs.unlinkSync(tempHtmlPath);
     }
-  } catch (error) {
-    console.error(error);
-    throw error;
   }
 }
-
