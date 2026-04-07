@@ -19,8 +19,92 @@ describe('calculateAndValidateTotals', () => {
         const result = calculateAndValidateTotals(invoice, null, null);
 
         assert.strictEqual(result.totalLineItems, 1500.50, 'Line items total should be 1500.50');
+        assert.strictEqual(result.totalTax, 0, 'No tax lines');
+        assert.strictEqual(result.serviceTotal, 1500.50, 'Service total should match line sum');
         assert.strictEqual(result.totalExpenses, 88.15, 'Expenses total should be 88.15');
         assert.strictEqual(result.calculatedTotal, 1588.65, 'Grand total should be 1588.65');
+    });
+
+    test('should add table tax rows to service total and grand total', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 130.0, rowType: 'tax' },
+            ],
+            expenses: [],
+        };
+
+        const result = calculateAndValidateTotals(invoice, null, null);
+
+        assert.strictEqual(result.totalLineItems, 1000.0, 'Line subtotal');
+        assert.strictEqual(result.totalTax, 130.0, 'Tax total');
+        assert.strictEqual(result.serviceTotal, 1130.0, 'Service total');
+        assert.strictEqual(result.calculatedTotal, 1130.0, 'Grand total');
+    });
+
+    test('should accept embedded service total when it matches subtotal + tax from table rows', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'HST (13%)', date: '2025-01-01', hours: 130, amount: 130.0, rowType: 'tax' },
+                {
+                    description: 'Total (including HST/GST)',
+                    date: '2025-01-01',
+                    hours: 1130,
+                    amount: 1130.0,
+                    rowType: 'serviceTotal',
+                },
+            ],
+            expenses: [],
+            embeddedServiceTotal: 1130.0,
+        };
+
+        const result = calculateAndValidateTotals(invoice, null, null);
+
+        assert.strictEqual(result.totalLineItems, 1000.0, 'Subtotal');
+        assert.strictEqual(result.totalTax, 130.0, 'Table tax');
+        assert.strictEqual(result.serviceTotal, 1130.0, 'Embedded service total');
+        assert.strictEqual(result.calculatedTotal, 1130.0, 'Grand total');
+    });
+
+    test('should throw when second row is tax but not 13% of first line amount', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 100.0, rowType: 'tax' },
+            ],
+            expenses: [],
+        };
+
+        assert.throws(
+            () => calculateAndValidateTotals(invoice, null, null),
+            Error,
+            /Second line \(tax\) amount \(100\) must equal 13% of the first line \(130/
+        );
+    });
+
+    test('should throw when embedded service total does not match subtotal + tax', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 130.0, rowType: 'tax' },
+                {
+                    description: 'Total (including HST/GST)',
+                    date: '2025-01-01',
+                    hours: 0,
+                    amount: 999.0,
+                    rowType: 'serviceTotal',
+                },
+            ],
+            expenses: [],
+            embeddedServiceTotal: 999.0,
+        };
+
+        assert.throws(
+            () => calculateAndValidateTotals(invoice, null, null),
+            Error,
+            /Service total \(written: 999\) does not match subtotal \+ tax \(1130\)/
+        );
     });
 
     test('should round totals to 2 decimal places', () => {
@@ -67,6 +151,7 @@ describe('calculateAndValidateTotals', () => {
 
         const result = calculateAndValidateTotals(invoice, null, 1166.57);
 
+        assert.strictEqual(result.serviceTotal, 1000.0, 'Service total before expenses');
         assert.strictEqual(result.calculatedTotal, 1166.57, 'Grand total should match');
         assert.ok(result, 'Should not throw error when totals match');
     });

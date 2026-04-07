@@ -117,6 +117,36 @@ function parseNumericValue(str) {
 }
 
 /**
+ * @param {string} cell
+ * @returns {string}
+ */
+function stripMarkdownBoldCell(cell) {
+  return cell.replace(/\*\*/g, '').trim();
+}
+
+/**
+ * @param {string} description
+ * @returns {boolean}
+ */
+function isLineItemServiceTotalDescription(description) {
+  const d = stripMarkdownBoldCell(description).toLowerCase();
+  return (
+    /^total\s*\(\s*including\s+hst\/gst\s*\)/.test(d) ||
+    /^total\s*\(\s*including\s+hst\s*\)/.test(d)
+  );
+}
+
+/**
+ * @param {string} description
+ * @returns {boolean}
+ */
+function isLineItemTaxDescription(description) {
+  if (isLineItemServiceTotalDescription(description)) return false;
+  const d = stripMarkdownBoldCell(description).toLowerCase();
+  return /\bhst\b/.test(d) || /\bgst\b/.test(d) || /\bvat\b/.test(d) || /\bpst\b/.test(d);
+}
+
+/**
  * @param {string} filePath
  * @returns {Invoice}
  */
@@ -136,6 +166,7 @@ export function fromMarkdownToPdf(filePath) {
     payee: { name: '', email: '', address: '', telephone: '' },
     lineItems: [],
     expenses: [],
+    embeddedServiceTotal: null,
     totalExpenses: 0,
     total: 0,
     date: currentDate,
@@ -236,14 +267,40 @@ export function fromMarkdownToPdf(filePath) {
       // Parse data row: Description | Date | Hours | Amount
       if (cells.length >= 4) {
         const [description, date, hours, amount] = cells;
-        if (description && date) {
-          invoice.lineItems.push({
-            description,
-            date,
-            hours: parseFloat(hours) || 0,
-            amount: parseFloat(amount) || 0,
-          });
+        if (!description || !date) {
+          continue;
         }
+        const amountNum = parseFloat(amount) || 0;
+        const hoursNum = parseFloat(hours) || 0;
+        const descPlain = stripMarkdownBoldCell(description);
+
+        if (isLineItemServiceTotalDescription(description)) {
+          invoice.lineItems.push({
+            description: descPlain,
+            date,
+            hours: hoursNum,
+            amount: amountNum,
+            rowType: 'serviceTotal',
+          });
+          invoice.embeddedServiceTotal = amountNum;
+          continue;
+        }
+        if (isLineItemTaxDescription(description)) {
+          invoice.lineItems.push({
+            description: descPlain,
+            date,
+            hours: hoursNum,
+            amount: amountNum,
+            rowType: 'tax',
+          });
+          continue;
+        }
+        invoice.lineItems.push({
+          description,
+          date,
+          hours: hoursNum,
+          amount: amountNum,
+        });
       }
       continue;
     }

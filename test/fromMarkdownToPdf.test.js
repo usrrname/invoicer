@@ -75,4 +75,21 @@ describe('fromMarkdownToPdf', () => {
         assert.strictEqual(invoice.calculatedTotal, 1166.57, 'Grand total should be 1166.57');
     });
 
+    test('should parse tax and service total rows in the line items table', () => {
+        const path = join(__dirname, 'totals-with-tax.md');
+        const invoice = fromMarkdownToPdf(path);
+
+        assert.ok(invoice, 'Invoice should be created');
+        assert.strictEqual(invoice.invoiceId, 'INV-2025-TAX', 'Invoice ID should match');
+        assert.strictEqual(invoice.lineItems.length, 3, 'Work + tax + service total rows');
+        assert.strictEqual(invoice.lineItems[1].rowType, 'tax');
+        assert.strictEqual(invoice.lineItems[2].rowType, 'serviceTotal');
+        assert.strictEqual(invoice.embeddedServiceTotal, 1130.0);
+        assert.strictEqual(invoice.totalLineItems, 1000.0, 'Subtotal excludes tax/total rows');
+        assert.strictEqual(invoice.totalTax, 130.0, 'Tax from table rows');
+        assert.strictEqual(invoice.serviceTotal, 1130.0, 'Service total from embedded row');
+        assert.strictEqual(invoice.totalExpenses, 166.57, 'Expenses total');
+        assert.strictEqual(invoice.calculatedTotal, 1296.57, 'Grand total includes expenses');
+    });
+
 });

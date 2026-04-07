@@ -41,6 +41,21 @@ h3 {
     border-bottom: 0.0625rem solid #e0e0e0;
 }
 
+tr.line-item-tax td,
+tr.line-item-service-total td {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+tr.line-item-service-total td {
+    border-top: 0.0625rem solid #d0d0d0;
+}
+
+tfoot tr.grand-total-row td {
+    font-weight: 500;
+    padding-top: 1.25rem;
+}
+
 h4 {
     font-size: 0.590rem;
 }

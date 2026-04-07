@@ -2,24 +2,42 @@
  * Builds semantic HTML for the invoice. No styling — only structure and data.
  * Styling is entirely in styles.css.
  *
+ * Amount due for services is serviceTotal. Tax and total-with-tax rows live in the Line Items
+ * table (rowType tax | serviceTotal). With no embedded service-total row, a tfoot total is shown.
+ * Expenses are listed for reference; grand total includes service + expenses.
+ *
  * @param {Invoice} invoice
- * @param {{ lineItemsTotal: number, expensesTotal: number, total: number }} totals
+ * @param {{ serviceTotal: number, expensesTotal: number, grandTotal: number, showTableFooter: boolean }} totals
  * @returns {string} HTML document string
  */
 export function buildInvoiceHtml(invoice, totals) {
-  const { lineItemsTotal, expensesTotal, total } = totals;
+  const { serviceTotal, expensesTotal, grandTotal, showTableFooter } = totals;
 
   const lineItemsRows = invoice.lineItems
-    .map(
-      (item) => `
-    <tr>
+    .map((item) => {
+      const rowClass =
+        item.rowType === 'tax'
+          ? ' class="line-item-tax"'
+          : item.rowType === 'serviceTotal'
+            ? ' class="line-item-service-total"'
+            : '';
+      return `
+    <tr${rowClass}>
       <td>${escapeHtml(item.description ?? '')}</td>
       <td>${escapeHtml(String(item.date ?? ''))}</td>
       <td>${escapeHtml(String(item.hours ?? ''))}</td>
       <td>${formatAmount(item.amount)}</td>
-    </tr>`
-    )
+    </tr>`;
+    })
     .join('');
+
+  const lineItemsTfootInner = showTableFooter
+    ? `
+      <tr>
+        <td colspan="3">Total (including HST/GST)</td>
+        <td>${formatAmount(serviceTotal)}</td>
+      </tr>`
+    : '';
 
   const expensesRows =
     Array.isArray(invoice.expenses) && invoice.expenses.length > 0
@@ -83,7 +101,9 @@ export function buildInvoiceHtml(invoice, totals) {
     </thead>
     <tbody>
 ${lineItemsRows}
-    </tbody>
+    </tbody>${showTableFooter ? `
+    <tfoot>${lineItemsTfootInner}
+    </tfoot>` : ''}
   </table>
 
   <h3>Expenses</h3>
@@ -104,9 +124,9 @@ ${expensesRows || '      <tr><td colspan="4">—</td></tr>'}
         <td colspan="3">Total Expenses</td>
         <td>${expensesTotal > 0 ? formatAmount(expensesTotal) : '—'}</td>
       </tr>
-      <tr>
-        <td colspan="3">Total</td>
-        <td>${formatAmount(total)}</td>
+      <tr class="grand-total-row">
+        <td colspan="3">Grand total</td>
+        <td>${formatAmount(grandTotal)}</td>
       </tr>
     </tfoot>
   </table>

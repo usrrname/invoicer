@@ -32,21 +32,24 @@ export async function generatePDF(invoice, outputFileName) {
     const month = new Date().getMonth() + 1;
     outputFolder = join(__dirname, '..', 'records', year, month);
   }
-
+  if (!outputFileName) {
+    outputFileName = `${invoice.date}-${invoice.invoiceId}-invoice.pdf`;
+  }
   const fileNameHasExtension = outputFileName.endsWith('.pdf');
-  const outputFilePath = join(outputFolder, fileNameHasExtension ? outputFileName : `${invoice.date}-${invoice.invoiceId}-invoice.pdf`);
+  const outputFilePath = join(outputFolder, fileNameHasExtension ? outputFileName : `${outputFileName}`);
 
-  const lineItemsTotal = invoice.lineItems.reduce(
-    (sum, item) => sum + parseFloat(item.amount ?? 0, 2),
-    0
-  );
   const expensesTotal =
     Array.isArray(invoice.expenses) ?
       invoice.expenses.reduce((sum, expense) => sum + parseFloat(+expense.amount, 2), 0)
-    : (invoice.expenses || 0);
-  const total = lineItemsTotal + expensesTotal;
+      : (invoice.expenses || 0);
 
-  const totals = { lineItemsTotal, expensesTotal, total };
+  const showTableFooter = invoice.embeddedServiceTotal == null;
+  const totals = {
+    serviceTotal: invoice.serviceTotal,
+    expensesTotal,
+    grandTotal: invoice.calculatedTotal,
+    showTableFooter,
+  };
   const html = buildInvoiceHtml(invoice, totals);
 
   const dir = dirname(outputFilePath);
