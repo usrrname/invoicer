@@ -1,3 +1,4 @@
+import { escapeHtml, formatAmount } from './utils/formatting.mjs';
 /**
  * Builds semantic HTML for the invoice. No styling — only structure and data.
  * Styling is entirely in styles.css.
@@ -125,26 +126,11 @@ ${expensesRows || '      <tr><td colspan="4">—</td></tr>'}
         <td>${expensesTotal > 0 ? formatAmount(expensesTotal) : '—'}</td>
       </tr>
       <tr class="grand-total-row">
-        <td colspan="3">Grand total</td>
+        <td colspan="4">Grand total</td>
         <td>${formatAmount(grandTotal)}</td>
       </tr>
     </tfoot>
   </table>
 </body>
 </html>`;
-}
-
-function escapeHtml(str) {
-  if (str == null) return '';
-  const s = String(str);
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function formatAmount(value) {
-  const n = Number(value);
-  return isNaN(n) ? '—' : '$' + n.toFixed(2);
 }

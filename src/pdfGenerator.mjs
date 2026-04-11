@@ -6,13 +6,6 @@ import { buildInvoiceHtml } from './invoiceTemplate.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const getCurrentDate = () => {
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
-  const day = new Date().getDate();
-  return `${year}-${month}-${day}`;
-};
-
 /**
  * Generates a PDF from an Invoice object. Handles only data and rendering
  * orchestration; all styling is in styles.css (applied via HTML).

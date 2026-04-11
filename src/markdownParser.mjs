@@ -1,5 +1,7 @@
 import * as fs from 'fs';
 import { calculateAndValidateTotals } from './totalsCalculator.mjs';
+import { getCurrentDate } from './utils/date.mjs';
+import { parseNumericValue } from './utils/formatting.mjs';
 
 /**
  * @typedef {Object} Payer
@@ -93,7 +95,6 @@ function parseListItem(line) {
   const value = match[2].trim()
   return { key, value };
 }
-
 /**
  * Checks if a line is a comment
  * @param {string} line - The line to check
@@ -101,19 +102,6 @@ function parseListItem(line) {
  */
 function isComment(line) {
   return line.trim().startsWith('<!--') && line.trim().endsWith('-->');
-}
-
-/**
- * Parses a numeric value from a string, removing currency symbols, commas, and whitespace
- * @param {string} str - The string to parse
- * @returns {number|null} The parsed number or null if not parseable
- */
-function parseNumericValue(str) {
-  if (!str) return null;
-  // Remove $, commas, and whitespace, then parse
-  const cleaned = str.replace(/[$,\s]/g, '');
-  const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? null : parsed;
 }
 
 /**
@@ -158,7 +146,7 @@ export function fromMarkdownToPdf(filePath) {
     throw new Error('File is empty');
   }
 
-  const currentDate = new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate();
+  const currentDate = getCurrentDate();
 
   const invoice = {
     invoiceId: '',

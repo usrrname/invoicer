@@ -1,11 +1,4 @@
-/**
- * Rounds a number to 2 decimal places
- * @param {number} value - The value to round
- * @returns {number} The rounded value
- */
-function roundToTwoDecimals(value) {
-  return Math.round(value * 100) / 100;
-}
+import { roundToTwoDecimals } from './utils/formatting.mjs';
 
 /** Ontario HST / GST rate applied when row 2 is a tax row (13% of row 1 amount). */
 const HST_GST_RATE = 0.13;
@@ -80,7 +73,7 @@ export function calculateAndValidateTotals(invoice, explicitExpensesTotal, expli
   invoice.calculatedTotal = roundedGrandTotal;
 
   // Validate expenses total if explicit value is provided
-  if (explicitExpensesTotal !== null) {
+  if (explicitExpensesTotal != null) {
     const roundedExplicitExpenses = roundToTwoDecimals(explicitExpensesTotal);
     const difference = Math.abs(roundedExplicitExpenses - roundedExpensesTotal);
     if (difference >= 0.01) {
@@ -89,7 +82,7 @@ export function calculateAndValidateTotals(invoice, explicitExpensesTotal, expli
   }
 
   // Validate grand total if explicit value is provided
-  if (explicitGrandTotal !== null) {
+  if (explicitGrandTotal != null) {
     const roundedExplicitGrand = roundToTwoDecimals(explicitGrandTotal);
     const difference = Math.abs(roundedExplicitGrand - roundedGrandTotal);
     if (difference >= 0.01) {
