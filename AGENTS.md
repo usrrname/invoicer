@@ -23,7 +23,8 @@ Run CLI from repo root. **PDF path:** `records/<year>/<month>/<output-basename.p
 | File | Role |
 |------|------|
 | `src/markdownParser.mjs` | Markdown → invoice object |
-| `src/totalsCalculator.mjs` | Subtotals, tax checks, grand total, throws on mismatch |
+| `src/billingRates.mjs` | Default hourly-rate fallback and optional advanced matching rules |
+| `src/totalsCalculator.mjs` | Hour × rate checks, subtotals, tax, grand total, throws on mismatch |
 | `src/invoiceTemplate.mjs` | HTML only |
 | `src/styles.css` | All PDF styling |
 | `src/pdfGenerator.mjs` | Temp HTML, Puppeteer PDF |
@@ -31,11 +32,12 @@ Run CLI from repo root. **PDF path:** `records/<year>/<month>/<output-basename.p
 
 ## Invoice markdown (what matters for math)
 
-- **Line items table:** `Description | Date | Hours | Amount`
-- **Totals use `Amount` only.** `Hours` is display-only (not × rate).
-- **Tax row:** description matches HST/GST/VAT/PST (word boundary); parsed as `rowType: 'tax'`. If it is the **second** row and the first row is a normal line, **tax amount must equal 13% of the first row’s amount** (rounded to cents).
+- **Line items table:** `Description | Date | Hours | Amount` or `Description | Date | Hours | Rate | Amount` (optional per-line `Rate` column).
+- **Hourly check:** For billable rows with `Hours` > 0, `Amount` must equal `Hours ×` rate. If row `Rate` is present, it is used; otherwise `DEFAULT_HOURLY_RATE` from `billingRates.mjs` is used (optional `HOURLY_RATE_RULES` can override as an advanced fallback). With `Hours` 0, skip this check (flat-fee line). Tax / service-total rows are excluded.
+- **Totals use `Amount`** for subtotal, tax base, and PDF; tax and grand-total rules are unchanged.
+- **Tax row:** description matches HST/GST/VAT/PST (word boundary); parsed as `rowType: 'tax'`. **Tax amount must equal 13% of the sum of all normal line-item amounts above that row** (rounded to cents). Any number of billable rows may appear before tax; then tax row, then service total row.
 - **Service total row:** description `Total (including HST/GST)` or `Total (including HST)` → `rowType: 'serviceTotal'`, `embeddedServiceTotal`; must equal subtotal + sum of tax rows (and drives hiding the line-items table footer duplicate total).
-- **No separate `## Tax` section** — tax lives in the line items table. Must equal 13% of the first row’s amount (rounded to cents).
+- **No separate `## Tax` section** — tax lives in the line items table.
 - **Expenses:** separate table; amounts sum to `totalExpenses`. PDF shows expenses + **Grand total** = `serviceTotal + expenses`. Optional footer rows `Total Expenses` / `Grand Total` or `Total` (non-expenses) supply explicit totals for validation.
 - **`## Total` section:** optional numeric line for explicit grand total check.
 

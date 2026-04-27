@@ -43,10 +43,10 @@ Date: 2025-12-25
 
 ## Line Items
 
-| Description          | Date                    | Hours  | Amount   |
-| -------------------- | ----------------------- | ------ | -------- |
-| Web Development      | 2024-01-15              | 8      | 1500.00  |
-| Design Services      | 2024-01-16              | 4      | 800.00   |
+| Description          | Date                    | Hours  | Rate  | Amount   |
+| -------------------- | ----------------------- | ------ | ----- | -------- |
+| Web Development      | 2024-01-15              | 8      | 150   | 1200.00  |
+| Design Services      | 2024-01-16              | 4      | 200   | 800.00   |
 
 ## Expenses
 
@@ -69,7 +69,7 @@ Date: 2025-12-25
   - `Email`: Email address of the invoicer
   - `Address`: Address of the invoicer
   - `Telephone`: Contact phone number
-- **Line Items Table**: Markdown table with columns: Description, Date, Hours, Amount
+- **Line Items Table**: Markdown table with columns: `Description, Date, Hours, Amount` (or optional `Description, Date, Hours, Rate, Amount` for per-line hourly rates)
 - **Expenses Table**: Markdown table with columns: Date, Name, Description, Amount
 - **Total**: Calculated automatically from line items and expenses
 

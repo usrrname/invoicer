@@ -1,7 +1,7 @@
 # Invoice
 
-Invoice ID: INV-2025-001
-Date: 2025-12-25
+Invoice ID: INV-2026-001
+Date: 2026-04-14
 
 ## Payer
 
@@ -22,10 +22,15 @@ Date: 2025-12-25
 
 ## Line Items
 
-| Description          | Date                    | Hours  | Amount   |
-| -------------------- | ----------------------- | ------ | -------- |
-| Web development | 2025-12-26 | 10    | 1000.00 |
-| Travel time           | 2025-12-03 – 2025-12-03 | 1.00   | 100.00   |
+Add **any number** of service line items (e.g. one row per billing period), then one row **HST/GST (13%)** whose amount is 13% of the **sum** of those line items (rounded to cents), then **Total (including HST/GST)** equal to that subtotal plus tax.  
+Optional: include a `Rate` column and set a per-line hourly rate; when present, validation uses that row's `Rate`.
+
+| Description | Date                    | Hours | Rate | Amount   |
+| ------------------------------------ | ----------------------- | ----- | ---- | -------- |
+| Services — 2026-03-16 to 2026-03-27 | 2026-03-16 – 2026-03-27 | 10    | 100  | 1000.00  |
+| Services — 2026-03-30 to 2026-04-10 | 2026-03-30 – 2026-04-10 | 10    | 100  | 1000.00  |
+| HST/GST (13%)                        | 2026-04-14              |       |      | 260.00   |
+| Total (including HST/GST)            | 2026-04-14              |       |      | 2260.00  |
 
 ## Expenses
 
