@@ -7,8 +7,8 @@ describe('calculateAndValidateTotals', () => {
     test('should calculate totals correctly from line items and expenses', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.00 },
-                { description: 'Item 2', date: '2025-01-02', hours: 5, amount: 500.50 }
+                { description: 'Item 1', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.00 },
+                { description: 'Item 2', date: '2025-01-02', hours: 5, hourlyRate: 100, amount: 500.00 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 37.92 },
@@ -18,17 +18,17 @@ describe('calculateAndValidateTotals', () => {
 
         const result = calculateAndValidateTotals(invoice, null, null);
 
-        assert.strictEqual(result.totalLineItems, 1500.50, 'Line items total should be 1500.50');
+        assert.strictEqual(result.totalLineItems, 1500.00, 'Line items total should be 1500.00');
         assert.strictEqual(result.totalTax, 0, 'No tax lines');
-        assert.strictEqual(result.serviceTotal, 1500.50, 'Service total should match line sum');
+        assert.strictEqual(result.serviceTotal, 1500.00, 'Service total should match line sum');
         assert.strictEqual(result.totalExpenses, 88.15, 'Expenses total should be 88.15');
-        assert.strictEqual(result.calculatedTotal, 1588.65, 'Grand total should be 1588.65');
+        assert.strictEqual(result.calculatedTotal, 1588.15, 'Grand total should be 1588.15');
     });
 
     test('should add table tax rows to service total and grand total', () => {
         const invoice = {
             lineItems: [
-                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'Work', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.0 },
                 { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 130.0, rowType: 'tax' },
             ],
             expenses: [],
@@ -45,7 +45,7 @@ describe('calculateAndValidateTotals', () => {
     test('should accept embedded service total when it matches subtotal + tax from table rows', () => {
         const invoice = {
             lineItems: [
-                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'Work', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.0 },
                 { description: 'HST (13%)', date: '2025-01-01', hours: 130, amount: 130.0, rowType: 'tax' },
                 {
                     description: 'Total (including HST/GST)',
@@ -67,10 +67,10 @@ describe('calculateAndValidateTotals', () => {
         assert.strictEqual(result.calculatedTotal, 1130.0, 'Grand total');
     });
 
-    test('should throw when second row is tax but not 13% of first line amount', () => {
+    test('should throw when tax row is not 13% of taxable subtotal above it', () => {
         const invoice = {
             lineItems: [
-                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'Work', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.0 },
                 { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 100.0, rowType: 'tax' },
             ],
             expenses: [],
@@ -79,14 +79,39 @@ describe('calculateAndValidateTotals', () => {
         assert.throws(
             () => calculateAndValidateTotals(invoice, null, null),
             Error,
-            /Second line \(tax\) amount \(100\) must equal 13% of the first line \(130/
+            /Tax row amount \(100\) must equal 13% of taxable subtotal \(130/
         );
+    });
+
+    test('should validate tax as 13% of sum of multiple line items before the tax row', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Web development (period A)', date: '2025-01-01', hours: 10, hourlyRate: 60, amount: 600.0 },
+                { description: 'Web development (period B)', date: '2025-01-08', hours: 10, hourlyRate: 40, amount: 400.0 },
+                { description: 'HST (13%)', date: '2025-01-15', hours: 0, amount: 130.0, rowType: 'tax' },
+                {
+                    description: 'Total (including HST/GST)',
+                    date: '2025-01-15',
+                    hours: 0,
+                    amount: 1130.0,
+                    rowType: 'serviceTotal',
+                },
+            ],
+            expenses: [],
+            embeddedServiceTotal: 1130.0,
+        };
+
+        const result = calculateAndValidateTotals(invoice, null, null);
+
+        assert.strictEqual(result.totalLineItems, 1000.0, 'Subtotal is both periods');
+        assert.strictEqual(result.totalTax, 130.0, 'Tax on combined subtotal');
+        assert.strictEqual(result.serviceTotal, 1130.0);
     });
 
     test('should throw when embedded service total does not match subtotal + tax', () => {
         const invoice = {
             lineItems: [
-                { description: 'Work', date: '2025-01-01', hours: 10, amount: 1000.0 },
+                { description: 'Work', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.0 },
                 { description: 'HST (13%)', date: '2025-01-01', hours: 0, amount: 130.0, rowType: 'tax' },
                 {
                     description: 'Total (including HST/GST)',
@@ -107,10 +132,40 @@ describe('calculateAndValidateTotals', () => {
         );
     });
 
+    test('should throw when line item amount does not match hours × hourly rate', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Work', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 999.0 },
+            ],
+            expenses: [],
+        };
+
+        assert.throws(
+            () => calculateAndValidateTotals(invoice, null, null),
+            Error,
+            /amount \(999\) must equal hours × rate \(10 × 100 = 1000\)/
+        );
+    });
+
+    test('should use line-item hourlyRate when provided', () => {
+        const invoice = {
+            lineItems: [
+                { description: 'Custom consulting', date: '2025-01-01', hours: 3, hourlyRate: 175, amount: 525.0 },
+            ],
+            expenses: [],
+        };
+
+        const result = calculateAndValidateTotals(invoice, null, null);
+
+        assert.strictEqual(result.totalLineItems, 525.0);
+        assert.strictEqual(result.serviceTotal, 525.0);
+        assert.strictEqual(result.calculatedTotal, 525.0);
+    });
+
     test('should round totals to 2 decimal places', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.333 }
+                { description: 'Item 1', date: '2025-01-01', hours: 0, amount: 1000.333 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 37.999 }
@@ -142,7 +197,7 @@ describe('calculateAndValidateTotals', () => {
     test('should validate matching explicit grand total', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.00 }
+                { description: 'Item 1', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.00 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 166.57 }
@@ -175,7 +230,7 @@ describe('calculateAndValidateTotals', () => {
     test('should throw error when explicit grand total does not match', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.00 }
+                { description: 'Item 1', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.00 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 166.57 }
@@ -192,7 +247,7 @@ describe('calculateAndValidateTotals', () => {
     test('should handle null explicit totals (backward compatibility)', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.00 }
+                { description: 'Item 1', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.00 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 166.57 }
@@ -221,7 +276,7 @@ describe('calculateAndValidateTotals', () => {
     test('should validate both explicit totals when provided', () => {
         const invoice = {
             lineItems: [
-                { description: 'Item 1', date: '2025-01-01', hours: 10, amount: 1000.00 }
+                { description: 'Item 1', date: '2025-01-01', hours: 10, hourlyRate: 100, amount: 1000.00 }
             ],
             expenses: [
                 { date: '2025-01-01', name: 'Uber', description: 'Transport', amount: 166.57 }

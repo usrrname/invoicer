@@ -18,11 +18,12 @@ Date: 2025-12-25
 
 ## Line Items
 
-| Description     | Date       | Hours | Amount |
-| --------------- | ---------- | ----- | ------ |
-| Web development | 2025-12-26 | 10    | 1000.00 |
-| HST/GST (13%) | 2025-12-26 | 130.00 | 130.00 |
-| Total (including HST/GST) | 2025-12-26 | 1130.00 | 1130.00 |
+| Description     | Date       | Hours | Rate | Amount |
+| --------------- | ---------- | ----- | ---- | ------ |
+| Web development (period A) | 2025-12-20 – 2025-12-26 | 10 | 60 | 600.00 |
+| Web development (period B) | 2025-12-27 – 2026-01-02 | 10 | 40 | 400.00 |
+| HST/GST (13%) | 2025-12-26 |  |  | 130.00 |
+| Total (including HST/GST) | 2025-12-26 |  |  | 1130.00 |
 
 ## Expenses
 

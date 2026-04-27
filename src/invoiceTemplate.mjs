@@ -91,7 +91,7 @@ export function buildInvoiceHtml(invoice, totals) {
   </table>
 
   <h3>Line Items</h3>
-  <table>
+  <table class="line-items-table">
     <thead>
       <tr>
         <th>Description</th>
@@ -108,7 +108,7 @@ ${lineItemsRows}
   </table>
 
   <h3>Expenses</h3>
-  <table>
+  <table class="expenses-table">
     <thead>
       <tr>
         <th>Date</th>
@@ -126,7 +126,7 @@ ${expensesRows || '      <tr><td colspan="4">—</td></tr>'}
         <td>${expensesTotal > 0 ? formatAmount(expensesTotal) : '—'}</td>
       </tr>
       <tr class="grand-total-row">
-        <td colspan="4">Grand total</td>
+        <td colspan="3">Grand total</td>
         <td>${formatAmount(grandTotal)}</td>
       </tr>
     </tfoot>

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { buildInvoiceHtml } from './invoiceTemplate.mjs';
+import { roundToTwoDecimals } from './utils/formatting.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,12 +36,14 @@ export async function generatePDF(invoice, outputFileName) {
     Array.isArray(invoice.expenses) ?
       invoice.expenses.reduce((sum, expense) => sum + parseFloat(+expense.amount, 2), 0)
       : (invoice.expenses || 0);
+  const serviceTotal = Number(invoice.serviceTotal) || 0;
+  const computedGrandTotal = roundToTwoDecimals(serviceTotal + expensesTotal);
 
   const showTableFooter = invoice.embeddedServiceTotal == null;
   const totals = {
-    serviceTotal: invoice.serviceTotal,
+    serviceTotal,
     expensesTotal,
-    grandTotal: invoice.calculatedTotal,
+    grandTotal: computedGrandTotal,
     showTableFooter,
   };
   const html = buildInvoiceHtml(invoice, totals);

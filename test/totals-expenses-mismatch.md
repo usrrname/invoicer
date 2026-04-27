@@ -18,9 +18,9 @@ Date: 2025-12-25
 
 ## Line Items
 
-| Description     | Date       | Hours | Amount |
-| --------------- | ---------- | ----- | ------ |
-| Web development | 2025-12-26 | 10    | 1000.00 |
+| Description     | Date       | Hours | Rate | Amount |
+| --------------- | ---------- | ----- | ---- | ------ |
+| Web development | 2025-12-26 | 10    | 100  | 1000.00 |
 
 ## Expenses
 

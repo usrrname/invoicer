@@ -147,6 +147,12 @@ th:nth-child(4) {
     text-align: right;
 }
 
+/* Expenses table: keep amount values pinned to row end, including totals rows with colspan */
+.expenses-table td:last-child,
+.expenses-table th:last-child {
+    text-align: right;
+}
+
 /* Address table - side by side layout (first table after h2) */
 h2+table {
     border: none;

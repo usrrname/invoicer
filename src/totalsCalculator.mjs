@@ -1,7 +1,16 @@
+import { hourlyRateForDescription } from './billingRates.mjs';
 import { roundToTwoDecimals } from './utils/formatting.mjs';
 
-/** Ontario HST / GST rate applied when row 2 is a tax row (13% of row 1 amount). */
+/** Ontario HST / GST rate: each tax row must equal 13% of taxable subtotal (sum of line amounts above that row). */
 const HST_GST_RATE = 0.13;
+
+/**
+ * @param {{ rowType?: string }} row
+ * @returns {boolean}
+ */
+function isTaxableLineRow(row) {
+  return row.rowType !== 'tax' && row.rowType !== 'serviceTotal';
+}
 
 /**
  * Calculates totals from line items and expenses, and validates against explicit totals if provided.
@@ -14,21 +23,39 @@ const HST_GST_RATE = 0.13;
 export function calculateAndValidateTotals(invoice, explicitExpensesTotal, explicitGrandTotal) {
   const lineRows = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
 
-  if (lineRows.length >= 2) {
-    const first = lineRows[0];
-    const second = lineRows[1];
-    if (
-      second.rowType === 'tax' &&
-      (!first.rowType || first.rowType === 'item')
-    ) {
-      const firstAmount = parseFloat(first.amount) || 0;
-      const expectedTax = roundToTwoDecimals(firstAmount * HST_GST_RATE);
-      const actualTax = roundToTwoDecimals(parseFloat(second.amount) || 0);
-      if (Math.abs(expectedTax - actualTax) >= 0.01) {
-        throw new Error(
-          `Second line (tax) amount (${actualTax}) must equal 13% of the first line (${expectedTax}, from ${firstAmount}).`
-        );
-      }
+  for (const row of lineRows) {
+    if (!isTaxableLineRow(row)) continue;
+    const hours = parseFloat(String(row.hours)) || 0;
+    if (hours <= 0) continue;
+    const explicitRate = parseFloat(String(row.hourlyRate));
+    const rate =
+      Number.isFinite(explicitRate) && explicitRate > 0
+        ? explicitRate
+        : hourlyRateForDescription(row.description ?? '');
+    const expectedAmount = roundToTwoDecimals(hours * rate);
+    const actualAmount = roundToTwoDecimals(parseFloat(row.amount) || 0);
+    if (Math.abs(expectedAmount - actualAmount) >= 0.01) {
+      const label = (row.description ?? '').trim() || '(line item)';
+      throw new Error(
+        `Line item "${label}": amount (${actualAmount}) must equal hours × rate (${hours} × ${rate} = ${expectedAmount}).`
+      );
+    }
+  }
+
+  for (let i = 0; i < lineRows.length; i++) {
+    const row = lineRows[i];
+    if (row.rowType !== 'tax') continue;
+
+    const taxableSubtotal = lineRows
+      .slice(0, i)
+      .filter(isTaxableLineRow)
+      .reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+    const expectedTax = roundToTwoDecimals(taxableSubtotal * HST_GST_RATE);
+    const actualTax = roundToTwoDecimals(parseFloat(row.amount) || 0);
+    if (Math.abs(expectedTax - actualTax) >= 0.01) {
+      throw new Error(
+        `Tax row amount (${actualTax}) must equal 13% of taxable subtotal (${expectedTax}, from ${roundToTwoDecimals(taxableSubtotal)}).`
+      );
     }
   }
 

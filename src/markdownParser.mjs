@@ -17,6 +17,7 @@ import { parseNumericValue } from './utils/formatting.mjs';
  * @property {string} description
  * @property {string} date
  * @property {number} hours
+ * @property {number|undefined} hourlyRate
  * @property {number} amount
  * @typedef {Object} Expense
  * @property {string} date
@@ -252,21 +253,30 @@ export function fromMarkdownToPdf(filePath) {
         continue;
       }
       
-      // Parse data row: Description | Date | Hours | Amount
+      // Parse data row: Description | Date | Hours | Amount (optional Rate column before Amount)
       if (cells.length >= 4) {
-        const [description, date, hours, amount] = cells;
-        if (!description || !date) {
+        const [description, date, hours] = cells;
+        const amountCell = cells[cells.length - 1];
+        const rateCell = cells.length >= 5 ? cells[cells.length - 2] : '';
+        if (!description) {
           continue;
         }
-        const amountNum = parseFloat(amount) || 0;
+        const dateValue = date ?? '';
+        const amountNum = parseFloat(amountCell) || 0;
         const hoursNum = parseFloat(hours) || 0;
+        const hourlyRateNum = rateCell !== '' ? parseFloat(rateCell) : NaN;
+        const hourlyRate =
+          Number.isFinite(hourlyRateNum) && hourlyRateNum > 0
+            ? hourlyRateNum
+            : undefined;
         const descPlain = stripMarkdownBoldCell(description);
 
         if (isLineItemServiceTotalDescription(description)) {
           invoice.lineItems.push({
             description: descPlain,
-            date,
+            date: dateValue,
             hours: hoursNum,
+            hourlyRate,
             amount: amountNum,
             rowType: 'serviceTotal',
           });
@@ -276,8 +286,9 @@ export function fromMarkdownToPdf(filePath) {
         if (isLineItemTaxDescription(description)) {
           invoice.lineItems.push({
             description: descPlain,
-            date,
+            date: dateValue,
             hours: hoursNum,
+            hourlyRate,
             amount: amountNum,
             rowType: 'tax',
           });
@@ -285,8 +296,9 @@ export function fromMarkdownToPdf(filePath) {
         }
         invoice.lineItems.push({
           description,
-          date,
+          date: dateValue,
           hours: hoursNum,
+          hourlyRate,
           amount: amountNum,
         });
       }

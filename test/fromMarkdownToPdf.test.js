@@ -81,15 +81,42 @@ describe('fromMarkdownToPdf', () => {
 
         assert.ok(invoice, 'Invoice should be created');
         assert.strictEqual(invoice.invoiceId, 'INV-2025-TAX', 'Invoice ID should match');
-        assert.strictEqual(invoice.lineItems.length, 3, 'Work + tax + service total rows');
-        assert.strictEqual(invoice.lineItems[1].rowType, 'tax');
-        assert.strictEqual(invoice.lineItems[2].rowType, 'serviceTotal');
+        assert.strictEqual(invoice.lineItems.length, 4, 'Two work rows + tax + service total');
+        assert.strictEqual(invoice.lineItems[2].rowType, 'tax');
+        assert.strictEqual(invoice.lineItems[3].rowType, 'serviceTotal');
         assert.strictEqual(invoice.embeddedServiceTotal, 1130.0);
         assert.strictEqual(invoice.totalLineItems, 1000.0, 'Subtotal excludes tax/total rows');
         assert.strictEqual(invoice.totalTax, 130.0, 'Tax from table rows');
         assert.strictEqual(invoice.serviceTotal, 1130.0, 'Service total from embedded row');
         assert.strictEqual(invoice.totalExpenses, 166.57, 'Expenses total');
         assert.strictEqual(invoice.calculatedTotal, 1296.57, 'Grand total includes expenses');
+    });
+
+    test('should accept any number of billable line items before tax and service total', () => {
+        const path = join(__dirname, 'totals-many-line-items.md');
+        const invoice = fromMarkdownToPdf(path);
+
+        assert.strictEqual(invoice.lineItems.length, 5, 'Three work rows + tax + service total');
+        assert.strictEqual(invoice.lineItems[3].rowType, 'tax');
+        assert.strictEqual(invoice.lineItems[4].rowType, 'serviceTotal');
+        assert.strictEqual(invoice.totalLineItems, 600.0, '100 + 200 + 300');
+        assert.strictEqual(invoice.totalTax, 78.0, '13% of 600');
+        assert.strictEqual(invoice.serviceTotal, 678.0);
+        assert.strictEqual(invoice.totalExpenses, 0);
+        assert.strictEqual(invoice.calculatedTotal, 678.0);
+    });
+
+    test('should parse per-line Rate column and validate using that rate', () => {
+        const path = join(__dirname, 'totals-with-custom-rates.md');
+        const invoice = fromMarkdownToPdf(path);
+
+        assert.strictEqual(invoice.invoiceId, 'INV-2026-RATE');
+        assert.strictEqual(invoice.lineItems[0].hourlyRate, 150);
+        assert.strictEqual(invoice.lineItems[1].hourlyRate, 200);
+        assert.strictEqual(invoice.totalLineItems, 900.0);
+        assert.strictEqual(invoice.totalTax, 117.0);
+        assert.strictEqual(invoice.serviceTotal, 1017.0);
+        assert.strictEqual(invoice.calculatedTotal, 1017.0);
     });
 
 });
